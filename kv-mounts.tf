@@ -1,4 +1,4 @@
-# function enables kv v2 secrets engine
+# FUNCTION ENABLES KV V2 SECRETS ENGINE
 resource "vault_mount" "kvv2" {
 
   for_each = {
@@ -13,7 +13,7 @@ resource "vault_mount" "kvv2" {
 
 }
 
-# writes data to kv store
+# WRITES DATA TO KV STORE
 resource "vault_generic_secret" "kvv2" {
   depends_on = [vault_mount.kvv2]
 
@@ -22,7 +22,6 @@ resource "vault_generic_secret" "kvv2" {
     mount.path => mount
   }
 
-  path = "${each.value["path"]}/${each.value["name"]}"
+  path      = "${each.value["path"]}/${each.value["name"]}"
   data_json = each.value["data_json"]
-
 }

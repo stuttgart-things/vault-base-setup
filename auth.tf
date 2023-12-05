@@ -1,13 +1,13 @@
 // ENABLE THE APPROLE AUTH METHOD
 resource "vault_auth_backend" "approle" {
   count = (var.enableApproleAuth) ? 1 : 0
-  type = "approle"
+  type  = "approle"
 }
 
 // CREATE APPROLE AUTH BACKEND ROLE
 resource "vault_approle_auth_backend_role" "approle" {
-  backend        = "approle"
-  depends_on           = [vault_auth_backend.approle]
+  backend    = "approle"
+  depends_on = [vault_auth_backend.approle]
 
   for_each = {
     for role in var.approle_roles :
@@ -21,8 +21,8 @@ resource "vault_approle_auth_backend_role" "approle" {
 // ENABLE USERPASS AUTH METHOD
 resource "vault_auth_backend" "userpass" {
   count = (var.enableUserPass) ? 1 : 0
-  path = var.userPassPath
-  type = "userpass"
+  path  = var.userPassPath
+  type  = "userpass"
 }
 
 // CREATE A USER
@@ -35,7 +35,7 @@ resource "vault_generic_endpoint" "client_userpass_password" {
     user.path => user
   }
 
-  path = each.value["path"]
+  path      = each.value["path"]
   data_json = each.value["data_json"]
 
 }

@@ -25,7 +25,7 @@ variable "enableApproleAuth" { default = false }
 
 variable "approle_roles" {
   type = list(object({
-    name         = string
+    name           = string
     token_policies = list(string)
   }))
   default     = []
@@ -35,8 +35,8 @@ variable "approle_roles" {
 variable "userPassPath" { default = "userpass" }
 variable "user_list" {
   type = list(object({
-    path         = string
-    data_json   = string
+    path      = string
+    data_json = string
   }))
   default     = []
   description = "A list of users"
