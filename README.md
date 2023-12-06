@@ -69,7 +69,7 @@ EOF
       data_json    = <<EOT
       {
         "password": "helloGitHub",
-        "policies": "default, admin"
+        "policies": ""read-all-s3-kvv2", "read-write-all-s3-kvv2", "admin"
       }
       EOT
   }
