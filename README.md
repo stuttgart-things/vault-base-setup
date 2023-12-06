@@ -6,7 +6,7 @@ terraform module for base-setup configuration of hashicorp vault.
 
 <details><summary>CALL MODULE W/ VALUES</summary>
 
-```yaml
+```hcl
 module "vault-base-setup" {
   source = "github.com/stuttgart-things/vault-base-setup"
   createDefaultAdminPolicy = true
@@ -84,6 +84,8 @@ output "secret_id" {
     value = module.vault-kvs.secret_id
 }
 ```
+
+<details><summary>EXECUTE TERRAFORM</summary>
 
 ```bash
 export VAULT_ADDR=${VAULT_ADDR}
