@@ -7,7 +7,6 @@ terraform module for base-setup configuration of hashicorp vault.
 <details><summary>CALL MODULE W/ VALUES</summary>
 
 ```bash
-cat <<EOF > main.tf
 module "vault-base-setup" {
   source = "github.com/stuttgart-things/vault-base-setup"
   createDefaultAdminPolicy = true
@@ -76,7 +75,6 @@ EOF
   }
   ]
 }
-EOF
 
 export VAULT_ADDR=${VAULT_ADDR}
 export VAULT_TOKEN=${VAULT_TOKEN}
