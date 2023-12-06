@@ -77,11 +77,11 @@ EOF
 }
 
 output "role_id" {
-    value = module.vault-kvs.role_id
+    value = module.vault-base-setup.role_id
 }
 
 output "secret_id" {
-    value = module.vault-kvs.secret_id
+    value = module.vault-base-setup.secret_id
 }
 ```
 
