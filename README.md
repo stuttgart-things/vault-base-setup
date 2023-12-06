@@ -85,6 +85,8 @@ output "secret_id" {
 }
 ```
 
+</details>
+
 <details><summary>EXECUTE TERRAFORM</summary>
 
 ```bash
