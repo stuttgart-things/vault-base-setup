@@ -18,10 +18,28 @@ variable "kv_policies" {
   description = "A list of kv policies"
 }
 
-variable "createDefaultAdminPolicy" { default = false }
-variable "enableUserPass" { default = false }
-variable "enableApproleAuth" { default = false }
+variable "k8s_auths" {
+  type = list(object({
+    name           = string
+    namespace      = string
+    token_policies = list(string)
+    token_ttl      = number
+  }))
+  default     = []
+  description = "A list of k8s_auth objects"
+}
 
+variable "kubeconfig_path" {
+  type        = string
+  default     = "~/.kube/config"
+  description = "kubeconfig path"
+}
+
+variable "context" {
+  type        = string
+  default     = "default"
+  description = "kube cluster context"
+}
 
 variable "approle_roles" {
   type = list(object({
@@ -41,7 +59,6 @@ variable "user_list" {
   default     = []
   description = "A list of users"
 }
-
 
 variable "secret_id_ttl" {
   type        = number
@@ -78,3 +95,7 @@ variable "token_period" {
   default     = 0
   description = "If set, indicates that the token generated using this role should never expire. The token should be renewed within the duration specified by this value. At each renewal, the token's TTL will be set to the value of this field. Specified in seconds."
 }
+
+variable "createDefaultAdminPolicy" { default = false }
+variable "enableUserPass" { default = false }
+variable "enableApproleAuth" { default = false }

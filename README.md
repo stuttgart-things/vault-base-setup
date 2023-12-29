@@ -74,6 +74,21 @@ EOF
       EOT
   }
   ]
+  kubeconfig_path = "/home/sthings/.kube/labda-app"
+  k8s_auths = [
+    {
+      name = "dev"
+      namespace = "default"
+      token_policies = ["read-all-s3-kvv2", "read-write-all-s3-kvv2"]
+      token_ttl = 3600
+    },
+    {
+      name = "cicd"
+      namespace = "tektoncd"
+      token_policies = ["read-all-tektoncd-kvv2"]
+      token_ttl = 3600
+    }
+  ]
 }
 
 output "role_id" {
