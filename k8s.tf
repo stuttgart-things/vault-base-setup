@@ -1,3 +1,5 @@
+// CREATE NAMESPACE!?
+
 // CREATE SERVICE-ACCOUNT
 resource "kubernetes_manifest" "service_account" {
 
