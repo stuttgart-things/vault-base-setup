@@ -112,7 +112,8 @@ resource "vault_kubernetes_auth_backend_config" "kubernetes" {
 
 }
 
-resource "vault_kubernetes_auth_backend_role" "example" {
+// CREATE BACKEND ROLE
+resource "vault_kubernetes_auth_backend_role" "backend_role" {
 
   for_each = {
     for auth in var.k8s_auths :
