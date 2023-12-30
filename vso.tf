@@ -32,7 +32,8 @@ resource "kubernetes_manifest" "vault_connection" {
       "vault_addr" =  var.vault_addr
     }
   ))
-  # depends_on = [helm_release.vso]
+  
+  depends_on = [helm_release.vso]
 }
 
 // DEPLOY VAULT AUTH
