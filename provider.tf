@@ -6,6 +6,7 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = ">= 2.24.0"
     }
+
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.14.0"
@@ -16,6 +17,10 @@ terraform {
       version = ">= 3.21.0"
     }
 
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.12.1"
+    }
   }
 }
 
@@ -27,4 +32,11 @@ provider "kubernetes" {
 provider "kubectl" {
   config_context = var.context
   config_path    = var.kubeconfig_path
+}
+
+provider "helm" {
+  kubernetes {
+    config_context = var.context
+    config_path    = var.kubeconfig_path
+  }
 }
