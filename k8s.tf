@@ -161,3 +161,21 @@ data "kubernetes_secret" "vault" {
   ]
 
 }
+
+// DEPLOY VAULT SECRETS OPERATOR
+resource "helm_release" "vso" {
+  count            =  1
+  name             = "vault-secrets-operator"
+  namespace        = "vault-secrets-operator"
+  create_namespace = true
+  repository       = "https://helm.releases.hashicorp.com"
+  chart            = "vault-secrets-operator"
+  version          = "0.4.2"
+  atomic           = true
+  timeout          = 240
+
+  depends_on = [
+    vault_kubernetes_auth_backend_role.backend_role
+  ]
+
+}
