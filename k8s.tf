@@ -155,4 +155,9 @@ data "kubernetes_secret" "vault" {
     name      = each.value["name"]
     namespace = each.value["namespace"]
   }
+
+  depends_on = [
+    kubernetes_secret.vault
+  ]
+
 }
