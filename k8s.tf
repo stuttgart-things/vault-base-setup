@@ -136,12 +136,12 @@ resource "vault_kubernetes_auth_backend_role" "backend_role" {
 }
 
 // KUBECONFIG FILE HANDLING
-data "local_file" "input" {
+data "local_file" "kubeconfig" {
   filename = var.kubeconfig_path
 }
 
 locals {
-  kubeconfig = yamldecode(file(var.kubeconfig_path))
+  kubeconfig = yamldecode(data.local_file.kubeconfig.content)
 }
 
 data "kubernetes_secret" "vault" {

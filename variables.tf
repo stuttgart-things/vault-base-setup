@@ -50,7 +50,15 @@ variable "approle_roles" {
   description = "A list of approle definitions"
 }
 
-variable "userPassPath" { default = "userpass" }
+variable "userPassPath" {
+  type        = string
+  default = "userpass"
+  description = "userpass"
+}
+
+
+
+
 variable "user_list" {
   type = list(object({
     path      = string
@@ -108,6 +116,20 @@ variable "vso_enabled" {
  default     = true
 }
 
-variable "createDefaultAdminPolicy" { default = false }
-variable "enableUserPass" { default = false }
-variable "enableApproleAuth" { default = false }
+variable "enableApproleAuth" {
+ description = "Enable approle auth"
+ type        = bool
+ default     = false
+}
+
+variable "createDefaultAdminPolicy" {
+ description = "Create default admin policy"
+ type        = bool
+ default     = false
+}
+
+variable "enableUserPass" {
+ description = "Enable user pass"
+ type        = bool
+ default     = false
+}
