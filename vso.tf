@@ -1,8 +1,8 @@
 // DEPLOY VAULT SECRETS OPERATOR
 resource "helm_release" "vso" {
-  count            =  1
+  count            =  var.vso_enabled ? 1 : 0
   name             = "vault-secrets-operator"
-  namespace        = "vault-secrets-operator"
+  namespace        = "vault"
   create_namespace = true
   repository       = "https://helm.releases.hashicorp.com"
   chart            = "vault-secrets-operator"
@@ -18,6 +18,7 @@ resource "helm_release" "vso" {
 
 // DEPLOY VAULT CONNECTION
 resource "kubernetes_manifest" "vault_connection" {
+  count            =  var.vso_enabled ? 1 : 0
 
   for_each = {
     for auth in var.k8s_auths :
@@ -38,6 +39,7 @@ resource "kubernetes_manifest" "vault_connection" {
 
 // DEPLOY VAULT AUTH
 resource "kubernetes_manifest" "vault_auth" {
+  count            =  var.vso_enabled ? 1 : 0
 
   for_each = {
     for auth in var.k8s_auths :
