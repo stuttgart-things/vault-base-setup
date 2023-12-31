@@ -23,10 +23,9 @@ terraform {
     }
 
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.4.1"
     }
-
   }
 }
 
@@ -45,4 +44,8 @@ provider "helm" {
     config_context = var.context
     config_path    = var.kubeconfig_path
   }
+}
+
+provider "vault" {
+  address = var.vault_addr
 }

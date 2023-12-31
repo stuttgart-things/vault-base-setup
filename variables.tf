@@ -52,7 +52,7 @@ variable "approle_roles" {
 
 variable "userPassPath" {
   type        = string
-  default = "userpass"
+  default     = "userpass"
   description = "userpass"
 }
 
@@ -105,31 +105,37 @@ variable "token_period" {
 }
 
 variable "csi_enabled" {
- description = "Enable secrets store csi driver"
- type        = bool
- default     = true
+  description = "Enable secrets store csi driver"
+  type        = bool
+  default     = true
 }
 
 variable "vso_enabled" {
- description = "Enable vault-secrets-operator"
- type        = bool
- default     = true
+  description = "Enable vault-secrets-operator"
+  type        = bool
+  default     = true
 }
 
 variable "enableApproleAuth" {
- description = "Enable approle auth"
- type        = bool
- default     = false
+  description = "Enable approle auth"
+  type        = bool
+  default     = false
 }
 
 variable "createDefaultAdminPolicy" {
- description = "Create default admin policy"
- type        = bool
- default     = false
+  description = "Create default admin policy"
+  type        = bool
+  default     = false
 }
 
 variable "enableUserPass" {
- description = "Enable user pass"
- type        = bool
- default     = false
+  description = "Enable user pass"
+  type        = bool
+  default     = false
+}
+
+variable "vault_addr" {
+  type        = string
+  default     = false
+  description = "vault_addr"
 }

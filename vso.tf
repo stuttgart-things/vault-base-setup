@@ -1,6 +1,6 @@
 // DEPLOY VAULT SECRETS OPERATOR
 resource "helm_release" "vso" {
-  count            =  var.vso_enabled ? 1 : 0
+  count            = var.vso_enabled ? 1 : 0
   name             = "vault-secrets-operator"
   namespace        = "vault"
   create_namespace = true
@@ -18,39 +18,40 @@ resource "helm_release" "vso" {
 
 // DEPLOY VAULT CONNECTION
 resource "kubernetes_manifest" "vault_connection" {
-  count            =  var.vso_enabled ? 1 : 0
 
   for_each = {
     for auth in var.k8s_auths :
     auth.name => auth
+    if var.vso_enabled[1]
   }
 
   manifest = yamldecode(templatefile(
     "${path.module}/templates/vault-connection.tpl",
     {
-      "name" = each.value["name"]
-      "namespace"= each.value["namespace"]
-      "vault_addr" =  var.vault_addr
+      "name"       = each.value["name"]
+      "namespace"  = each.value["namespace"]
+      "vault_addr" = var.vault_addr
     }
   ))
-  
+
   depends_on = [helm_release.vso]
 }
 
 // DEPLOY VAULT AUTH
 resource "kubernetes_manifest" "vault_auth" {
-  count            =  var.vso_enabled ? 1 : 0
+  count = var.vso_enabled ? 1 : 0
 
   for_each = {
     for auth in var.k8s_auths :
     auth.name => auth
+    if var.vso_enabled[1]
   }
 
   manifest = yamldecode(templatefile(
     "${path.module}/templates/vault-auth.tpl",
     {
-      "name" = each.value["name"]
-      "namespace"= each.value["namespace"]
+      "name"      = each.value["name"]
+      "namespace" = each.value["namespace"]
     }
   ))
   depends_on = [kubernetes_manifest.vault_connection]

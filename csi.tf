@@ -1,6 +1,6 @@
 // DEPLOY VAULT SECRETS STORE CSI DRIVER
 resource "helm_release" "csi" {
-  count            =  var.csi_enabled ? 1 : 0
+  count            = var.csi_enabled ? 1 : 0
   name             = "secrets-store-csi-driver"
   namespace        = "vault"
   create_namespace = true
