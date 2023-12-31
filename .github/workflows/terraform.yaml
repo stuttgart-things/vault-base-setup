@@ -7,6 +7,20 @@ on:
       - 'main'
 
 jobs:
+
+  Terraform-Validate:
+    runs-on: arc-runner-scale-set-vault-base-setup
+    container:
+      image: hashicorp/terraform:1.6
+    environment: k8s
+    continue-on-error: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+      - run: |
+          terraform fmt
+          terraform validate
+
   Terraform-Lint:
     runs-on: arc-runner-scale-set-vault-base-setup
     container:
@@ -18,5 +32,3 @@ jobs:
         uses: actions/checkout@v4.1.1
       - run: |
           tflint --recursive
-          terraform fmt
-          terraform validate
