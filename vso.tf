@@ -39,7 +39,6 @@ resource "kubernetes_manifest" "vault_connection" {
 
 // DEPLOY VAULT AUTH
 resource "kubernetes_manifest" "vault_auth" {
-  count = var.vso_enabled ? 1 : 0
 
   for_each = {
     for auth in var.k8s_auths :
