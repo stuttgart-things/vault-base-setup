@@ -96,6 +96,18 @@ variable "token_period" {
   description = "If set, indicates that the token generated using this role should never expire. The token should be renewed within the duration specified by this value. At each renewal, the token's TTL will be set to the value of this field. Specified in seconds."
 }
 
+variable "csi_enabled" {
+ description = "Enable secrets store csi driver"
+ type        = bool
+ default     = true
+}
+
+variable "vso_enabled" {
+ description = "Enable vault-secrets-operator"
+ type        = bool
+ default     = true
+}
+
 variable "createDefaultAdminPolicy" { default = false }
 variable "enableUserPass" { default = false }
 variable "enableApproleAuth" { default = false }
