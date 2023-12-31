@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4.1.1
       - run: |
           ls -lta
-          tflint --chdir=./ --recursive
+          tflint --recursive
           
       #- uses: actions/upload-artifact@v3
       #  with:
