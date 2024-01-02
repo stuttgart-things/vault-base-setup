@@ -7,7 +7,6 @@ on:
       - 'main'
 
 jobs:
-
   Terraform-Validate:
     runs-on: arc-runner-scale-set-vault-base-setup
     container:
