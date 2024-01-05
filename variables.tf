@@ -139,3 +139,9 @@ variable "vault_addr" {
   default     = false
   description = "vault_addr"
 }
+
+variable "cluster_name" {
+  type        = string
+  default     = false
+  description = "cluster name"
+}
