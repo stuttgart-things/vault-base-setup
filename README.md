@@ -5,7 +5,7 @@ terraform module for base-setup configuration of hashicorp vault.
 ## EXAMPLE USAGE
 
 
-<details><summary><b>APPLY W/ VARS</b></summary>
+<details><summary><b>DEPLOY K8S AUTH ON CLUSTER</b></summary>
 
 ```hcl
 module "vault-base-setup" {
@@ -18,12 +18,12 @@ module "vault-base-setup" {
   vso_enabled = true
   namespace_vso = "vault"
   k8s_auths = [
-	{
-		name = "dev"
-		namespace = "default"
-		token_policies = ["read-all-s3-kvv2", "read-write-all-s3-kvv2"]
-		token_ttl = 3600
-	},
+    {
+	name = "dev"
+	namespace = "default"
+	token_policies = ["read-all-s3-kvv2", "read-write-all-s3-kvv2"]
+	token_ttl = 3600
+    },
   ]
 }
 ```
@@ -31,7 +31,7 @@ module "vault-base-setup" {
 ```bash
 # ONLY APPLY IF VSO IS ENABLED
 kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultauths.yaml 
-export VAULT_TOKEN=hvs.dBxVcO0mo5XhbkFJhR5P3kdW
+export VAULT_TOKEN=<TOKEN>
 terraform init --upgrade
 terraform apply
 ```
