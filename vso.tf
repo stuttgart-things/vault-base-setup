@@ -22,7 +22,7 @@ resource "kubernetes_manifest" "vault_connection" {
   for_each = {
     for auth in var.k8s_auths :
     auth.name => auth
-    if var.vso_enabled[1]
+    if var.vso_enabled
   }
 
   manifest = yamldecode(templatefile(
@@ -43,7 +43,7 @@ resource "kubernetes_manifest" "vault_auth" {
   for_each = {
     for auth in var.k8s_auths :
     auth.name => auth
-    if var.vso_enabled[1]
+    if var.vso_enabled
   }
 
   manifest = yamldecode(templatefile(
