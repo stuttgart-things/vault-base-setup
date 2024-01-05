@@ -4,6 +4,41 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
+
+<details><summary><b>APPLY W/ VARS</b></summary>
+
+```hcl
+module "vault-base-setup" {
+  source = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr = "https://vault.dev11.4sthings.tiab.ssc.sva.de"
+  cluster_name = "labul-app1"
+  kubeconfig_path = "/home/sthings/.kube/labul-app1"
+  csi_enabled = true
+  namespace_csi = "vault"
+  vso_enabled = true
+  namespace_vso = "vault"
+  k8s_auths = [
+	{
+		name = "dev"
+		namespace = "default"
+		token_policies = ["read-all-s3-kvv2", "read-write-all-s3-kvv2"]
+		token_ttl = 3600
+	},
+  ]
+}
+```
+
+```bash
+# ONLY APPLY IF VSO IS ENABLED
+kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultauths.yaml 
+export VAULT_TOKEN=hvs.dBxVcO0mo5XhbkFJhR5P3kdW
+terraform init --upgrade
+terraform apply
+```
+
+</details>
+
+
 <details><summary>CALL MODULE W/ VALUES</summary>
 
 ```hcl
