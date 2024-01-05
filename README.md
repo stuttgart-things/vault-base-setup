@@ -30,8 +30,9 @@ module "vault-base-setup" {
 
 ```bash
 # ONLY APPLY IF VSO IS ENABLED
-# kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultconnections.yaml
-# kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultauths.yaml
+kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultconnections.yaml
+kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-operator/main/chart/crds/secrets.hashicorp.com_vaultauths.yaml
+
 export VAULT_TOKEN=<TOKEN>
 terraform init --upgrade
 terraform apply
