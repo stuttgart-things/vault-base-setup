@@ -56,9 +56,6 @@ variable "userPassPath" {
   description = "userpass"
 }
 
-
-
-
 variable "user_list" {
   type = list(object({
     path      = string
@@ -111,7 +108,7 @@ variable "csi_enabled" {
 }
 
 variable "namespace_csi" {
-  description = "Enable secrets store csi driver"
+  description = "Namespace of secrets store csi driver"
   type        = string
   default     = "secrets-store-csi"
 }
@@ -126,6 +123,12 @@ variable "vso_enabled" {
   description = "Enable vault-secrets-operator"
   type        = bool
   default     = true
+}
+
+variable "namespace_vso" {
+  description = "Namespace of vault-secrets-operator"
+  type        = string
+  default     = "vault-secrets-operator"
 }
 
 variable "enableApproleAuth" {

@@ -2,7 +2,7 @@
 resource "helm_release" "vso" {
   count            = var.vso_enabled ? 1 : 0
   name             = "vault-secrets-operator"
-  namespace        = "vault"
+  namespace        = var.namespace_vso
   create_namespace = true
   repository       = "https://helm.releases.hashicorp.com"
   chart            = "vault-secrets-operator"
