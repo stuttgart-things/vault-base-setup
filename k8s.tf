@@ -101,7 +101,7 @@ resource "vault_kubernetes_auth_backend_config" "kubernetes" {
     auth.name => auth
   }
 
-  backend                = each.value["name"]
+  backend                = "${var.cluster_name}-${each.value["name"]}"
   kubernetes_host        = local.kubeconfig.clusters[0].cluster.server
   kubernetes_ca_cert     = data.kubernetes_secret.vault[each.value["name"]].data["ca.crt"]
   token_reviewer_jwt     = data.kubernetes_secret.vault[each.value["name"]].data.token
@@ -122,7 +122,7 @@ resource "vault_kubernetes_auth_backend_role" "backend_role" {
     auth.name => auth
   }
 
-  backend                          = each.value["name"]
+  backend                          = "${var.cluster_name}-${each.value["name"]}"
   role_name                        = each.value["name"]
   bound_service_account_names      = [each.value["name"]]
   bound_service_account_namespaces = [each.value["namespace"]]
