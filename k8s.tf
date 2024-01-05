@@ -85,7 +85,7 @@ resource "vault_auth_backend" "kubernetes" {
   }
 
   type = "kubernetes"
-  path =  "cluster_name-${each.value["name"]}"
+  path =  "${cluster_name}-${each.value["name"]}"
 
   depends_on = [
     kubernetes_secret.vault
