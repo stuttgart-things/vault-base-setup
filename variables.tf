@@ -110,6 +110,18 @@ variable "csi_enabled" {
   default     = true
 }
 
+variable "namespace_csi" {
+  description = "Enable secrets store csi driver"
+  type        = string
+  default     = "secrets-store-csi"
+}
+
+variable "cluster_name" {
+  type        = string
+  default     = false
+  description = "cluster name"
+}
+
 variable "vso_enabled" {
   description = "Enable vault-secrets-operator"
   type        = bool
@@ -145,3 +157,4 @@ variable "cluster_name" {
   default     = false
   description = "cluster name"
 }
+

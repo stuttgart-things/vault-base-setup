@@ -2,7 +2,7 @@
 resource "helm_release" "csi" {
   count            = var.csi_enabled ? 1 : 0
   name             = "secrets-store-csi-driver"
-  namespace        = "vault"
+  namespace        = var.namespace_csi
   create_namespace = true
   repository       = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
   chart            = "secrets-store-csi-driver "
