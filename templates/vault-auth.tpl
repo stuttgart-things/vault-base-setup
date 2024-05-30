@@ -7,7 +7,7 @@ metadata:
 spec:
   vaultConnectionRef: ${name}
   method: kubernetes
-  mount: ${name}
+  mount: ${var.cluster_name}-${name}
   kubernetes:
     role: ${name}
     serviceAccount: ${name}
