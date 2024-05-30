@@ -4,6 +4,82 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
+<details><summary><b>SECRETS + K8S AUTH + VSO</b></summary>
+
+```hcl
+module "vault-secrets-setup" {
+  source = "../../vault-base-setup/"
+  kubeconfig_path = "/home/sthings/.kube/demo"
+  vault_addr = "https://vault.demo.sthings-vsphere.labul.sva.de"
+  createDefaultAdminPolicy = true
+  csi_enabled = false
+  vso_enabled = true
+  cluster_name = "demo"
+  enableApproleAuth = false
+  secret_engines = [
+    {
+      path         = "apps"
+      name         = "demo"
+      description  = "minio app secrets"
+      data_json    = <<EOT
+      {
+        "accessKey": "this",
+        "secretKey": "andThat"
+      }
+      EOT
+    }
+  ]
+  kv_policies = [
+    {
+      name         = "read-demo"
+      capabilities = <<EOF
+path "apps/data/demo" {
+   capabilities = ["read"]
+}
+path "apps/metadata/demo" {
+   capabilities = ["read"]
+}
+EOF
+    }
+  ]
+  k8s_auths = [
+    {
+      name = "dev"
+      namespace = "default"
+      token_policies = ["read-demo"]
+      token_ttl = 3600
+    }
+  ]
+}
+```
+
+```bash
+export VAULT_TOKEN=<TOKEN>
+terraform init --upgrade
+terraform apply
+```
+
+```yaml
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: vault-static-apps1
+  namespace: default
+spec:
+  vaultAuthRef: dev
+  mount: apps
+  type: kv-v2
+  path: demo
+  refreshAfter: 10s
+  destination:
+    create: true
+    name: vso-app
+```
+
+
+</details>
+
 
 <details><summary><b>DEPLOY K8S AUTH ON CLUSTER</b></summary>
 
