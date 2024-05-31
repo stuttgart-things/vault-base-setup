@@ -12,7 +12,7 @@ module "vault-secrets-setup" {
   kubeconfig_path = "/home/sthings/.kube/demo"
   vault_addr = "https://vault.demo.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
-  csi_enabled = true
+  csi_enabled = false
   vso_enabled = true
   cluster_name = "demo"
   enableApproleAuth = false
