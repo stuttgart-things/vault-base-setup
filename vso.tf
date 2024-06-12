@@ -51,6 +51,7 @@ resource "kubernetes_manifest" "vault_auth" {
     {
       "name"      = each.value["name"]
       "namespace" = each.value["namespace"]
+      "cluster_name" = var.cluster_name
     }
   ))
   depends_on = [kubernetes_manifest.vault_connection]
