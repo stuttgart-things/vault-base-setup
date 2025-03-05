@@ -6,7 +6,7 @@ resource "helm_release" "vso" {
   create_namespace = true
   repository       = "https://helm.releases.hashicorp.com"
   chart            = "vault-secrets-operator"
-  version          = "0.8.0"
+  version          = "0.10.0"
   atomic           = true
   timeout          = 240
 
