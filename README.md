@@ -6,7 +6,9 @@ terraform module for base-setup configuration of hashicorp vault.
 
 <details><summary><b>BASE VAULT CONFIG (APPROLE)</b></summary>
 
-```hcl
+### MODULE CALL
+
+```bash
 cat <<EOF > vault-base.hcl
 module "vault-secrets-setup" {
   source                   = "../"
@@ -66,6 +68,8 @@ output "secret_ids" {
 EOF
 ```
 
+### EXECUTION
+
 ```bash
 export VAULT_TOKEN=hvs.#..
 terraform init
@@ -73,10 +77,28 @@ terraform apply --auto-approve
 terraform output -json
 ```
 
+### TEST APPROLE w/ ANSIBLE (OPTIONAL)
+
 ```bash
-export VAULT_TOKEN=<TOKEN>
-terraform init --upgrade
-terraform apply
+cat <<EOF > test-approle.yaml
+---
+- hosts: localhost
+  become: true
+
+  vars:
+    vault_approle_id: "INSERT-HERE"
+    vault_approle_secret: "INSERT-HERE" # pragma: allowlist secret
+    vault_url: https://vault.172.18.0.2.nip.io
+
+    username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=apps/data/s3:accessKey validate_certs=false auth_method=approle role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
+
+  tasks:
+    - name: Debug
+      debug:
+        var: username
+EOF
+
+ansible-playbook test-approle.yaml -vv
 ```
 
 </details>
