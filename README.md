@@ -4,7 +4,7 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
-<details><summary><b>BASE VAULT CONFIG (APPROLE)/b></summary>
+<details><summary><b>BASE VAULT CONFIG (APPROLE)</b></summary>
 
 ```hcl
 cat <<EOF > vault-base.hcl
