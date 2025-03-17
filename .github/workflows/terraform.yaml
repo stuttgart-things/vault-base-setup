@@ -1,20 +1,24 @@
 ---
 name: Terraform
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
+  push:
+    branches:
+      - 'feature/**'
+      - 'feat/**'
+      - 'fix/**'
+      - 'renovate/**'
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   validate-terraform:
     if: github.event.ref == 'refs/heads/main'
     name: Valdiate
-    uses: stuttgart-things/stuttgart-things/.github/workflows/validate-terraform.yaml@main  
+    uses: stuttgart-things/stuttgart-things/.github/workflows/validate-terraform.yaml@main
     with:
       environment-name: k8s
-      runs-on: ghr-vault-base-setup-labda-test
+      runs-on: ghr-vault-base-setup-skyami-cicd
       terraform-version: 1.8.4
       tflint-version: v0.51.1
       continue-error: false

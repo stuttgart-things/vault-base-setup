@@ -24,7 +24,7 @@ module "vault-secrets-setup" {
       data_json    = <<EOT
       {
         "accessKey": "this",
-        "secretKey": "andThat"
+        "secretKey": "andThat" # pragma: allowlist secret
       }
       EOT
     }
@@ -79,7 +79,6 @@ spec:
 
 
 </details>
-
 
 <details><summary><b>DEPLOY K8S AUTH ON CLUSTER</b></summary>
 
@@ -141,7 +140,7 @@ module "vault-base-setup" {
       data_json    = <<EOT
       {
         "accessKey": "this",
-        "secretKey": "andThat"
+        "secretKey": "andThat" # pragma: allowlist secret
       }
       EOT
     }
@@ -181,7 +180,7 @@ EOF
       path         = "auth/userpass/users/user1"
       data_json    = <<EOT
       {
-        "password": "helloGitHub",
+        "password": "helloGitHub", # pragma: allowlist secret
         "policies": ""read-all-s3-kvv2", "read-write-all-s3-kvv2", "admin"
       }
       EOT
