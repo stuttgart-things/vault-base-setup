@@ -1,5 +1,5 @@
 module "vault-secrets-setup" {
-  source                   = "../vault-base-setup/"
+  source                   = "../"
   kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"
   vault_addr               = "https://vault.demo.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
