@@ -16,6 +16,11 @@ tasks:
         task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
         task ${task}
 
+  terraform:fmt:
+    desc: Format all Terraform files
+    cmds:
+      - terraform fmt -recursive
+
   check:
     desc: "Run pre-commit hooks"
     cmds:
