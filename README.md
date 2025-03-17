@@ -4,7 +4,7 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
-<details><summary><b>SECRETS + K8S AUTH + VSO</b></summary>
+<details><summary><b>SECRETS + K8S AUTH</b></summary>
 
 ```hcl
 module "vault-secrets-setup" {
@@ -13,7 +13,7 @@ module "vault-secrets-setup" {
   vault_addr = "https://vault.demo.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
   csi_enabled = false
-  vso_enabled = true
+  vso_enabled = false
   cluster_name = "demo"
   enableApproleAuth = false
   secret_engines = [
