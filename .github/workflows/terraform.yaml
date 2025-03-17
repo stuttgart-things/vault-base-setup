@@ -13,7 +13,7 @@ on:
 
 jobs:
   validate-terraform:
-    if: github.event.ref == 'refs/heads/main'
+    # if: github.event.ref == 'refs/heads/main'
     name: Valdiate
     uses: stuttgart-things/github-workflow-templates/.github/workflows/call-validate-terraform.yaml@main
     with:
