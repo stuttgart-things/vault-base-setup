@@ -8,20 +8,22 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ```hcl
 module "vault-secrets-setup" {
-  source = "../../vault-base-setup/"
-  kubeconfig_path = "/home/sthings/.kube/demo"
-  vault_addr = "https://vault.demo.sthings-vsphere.labul.sva.de"
+  source                   = "/home/sthings/projects/terraform/vault-base-setup/"
+  kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"
+  vault_addr               = "https://vault.demo.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
-  csi_enabled = false
-  vso_enabled = false
-  cluster_name = "demo"
-  enableApproleAuth = false
+  csi_enabled              = false
+  vso_enabled              = false
+  skip_tls_verify          = false
+  context                  = "kind-helm-dev"
+  cluster_name             = "kind-helm-dev"
+  enableApproleAuth        = false
   secret_engines = [
     {
-      path         = "apps"
-      name         = "demo"
-      description  = "minio app secrets"
-      data_json    = <<EOT
+      path        = "apps"
+      name        = "demo"
+      description = "minio app secrets"
+      data_json   = <<EOT
       {
         "accessKey": "this",
         "secretKey": "andThat" # pragma: allowlist secret
@@ -44,10 +46,10 @@ EOF
   ]
   k8s_auths = [
     {
-      name = "dev"
-      namespace = "default"
+      name           = "dev"
+      namespace      = "default"
       token_policies = ["read-demo"]
-      token_ttl = 3600
+      token_ttl      = 3600
     }
   ]
 }
