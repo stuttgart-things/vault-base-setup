@@ -49,8 +49,8 @@ resource "kubernetes_manifest" "vault_auth" {
   manifest = yamldecode(templatefile(
     "${path.module}/templates/vault-auth.tpl",
     {
-      "name"      = each.value["name"]
-      "namespace" = each.value["namespace"]
+      "name"         = each.value["name"]
+      "namespace"    = each.value["namespace"]
       "cluster_name" = var.cluster_name
     }
   ))

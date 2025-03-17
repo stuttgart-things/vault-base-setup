@@ -154,3 +154,9 @@ variable "vault_addr" {
   default     = false
   description = "vault_addr"
 }
+
+variable "skip_tls_verify" {
+  description = "Skip tls for vault"
+  type        = bool
+  default     = false
+}

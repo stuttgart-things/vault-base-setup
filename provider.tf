@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.6.5"
+  required_version = ">= 1.10.5"
 
   required_providers {
     kubernetes = {
@@ -47,5 +47,6 @@ provider "helm" {
 }
 
 provider "vault" {
-  address = var.vault_addr
+  address         = var.vault_addr
+  skip_tls_verify = var.skip_tls_verify
 }

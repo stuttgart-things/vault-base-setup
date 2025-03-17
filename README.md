@@ -4,27 +4,29 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
-<details><summary><b>SECRETS + K8S AUTH + VSO</b></summary>
+<details><summary><b>SECRETS + K8S AUTH</b></summary>
 
 ```hcl
 module "vault-secrets-setup" {
-  source = "../../vault-base-setup/"
-  kubeconfig_path = "/home/sthings/.kube/demo"
-  vault_addr = "https://vault.demo.sthings-vsphere.labul.sva.de"
+  source                   = "/home/sthings/projects/terraform/vault-base-setup/"
+  kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"
+  vault_addr               = "https://vault.demo.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
-  csi_enabled = false
-  vso_enabled = true
-  cluster_name = "demo"
-  enableApproleAuth = false
+  csi_enabled              = false
+  vso_enabled              = false
+  skip_tls_verify          = false
+  context                  = "kind-helm-dev"
+  cluster_name             = "kind-helm-dev"
+  enableApproleAuth        = false
   secret_engines = [
     {
-      path         = "apps"
-      name         = "demo"
-      description  = "minio app secrets"
-      data_json    = <<EOT
+      path        = "apps"
+      name        = "demo"
+      description = "minio app secrets"
+      data_json   = <<EOT
       {
         "accessKey": "this",
-        "secretKey": "andThat"
+        "secretKey": "andThat" # pragma: allowlist secret
       }
       EOT
     }
@@ -44,10 +46,10 @@ EOF
   ]
   k8s_auths = [
     {
-      name = "dev"
-      namespace = "default"
+      name           = "dev"
+      namespace      = "default"
       token_policies = ["read-demo"]
-      token_ttl = 3600
+      token_ttl      = 3600
     }
   ]
 }
@@ -79,7 +81,6 @@ spec:
 
 
 </details>
-
 
 <details><summary><b>DEPLOY K8S AUTH ON CLUSTER</b></summary>
 
@@ -141,7 +142,7 @@ module "vault-base-setup" {
       data_json    = <<EOT
       {
         "accessKey": "this",
-        "secretKey": "andThat"
+        "secretKey": "andThat" # pragma: allowlist secret
       }
       EOT
     }
@@ -181,7 +182,7 @@ EOF
       path         = "auth/userpass/users/user1"
       data_json    = <<EOT
       {
-        "password": "helloGitHub",
+        "password": "helloGitHub", # pragma: allowlist secret
         "policies": ""read-all-s3-kvv2", "read-write-all-s3-kvv2", "admin"
       }
       EOT

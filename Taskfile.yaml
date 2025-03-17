@@ -1,0 +1,105 @@
+---
+version: 3
+vars:
+  PROJECT:
+    sh: echo ${PROJECT}
+  BRANCH:
+    sh: if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
+  DATE:
+    sh: date +"%Y.%m%d.%H%M"
+
+tasks:
+  do:
+    desc: Select a task to run
+    cmds:
+      - |
+        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
+        task ${task}
+
+  terraform:fmt:
+    desc: Format all Terraform files
+    cmds:
+      - terraform fmt -recursive
+
+  check:
+    desc: "Run pre-commit hooks"
+    cmds:
+      - pre-commit run -a
+
+  branch:
+    desc: Create branch from main
+    cmds:
+      - git checkout main
+      - git branch
+      - git pull
+      - |
+        echo "Enter to be created (remote) branch:"
+        read BRANCH_NAME;
+        git checkout -b ${BRANCH_NAME}
+        git push origin ${BRANCH_NAME}
+      - git branch
+      - git branch --set-upstream-to=origin/main ${BRANCH_NAME}
+
+  commit:
+    desc: Commit + push code into branch
+    deps:
+      - check
+      - terraform:fmt
+    cmds:
+      - git branch --set-upstream-to=origin/{{ .BRANCH }}
+      - git pull
+      - git status
+      - |
+        git add *
+        git status
+        if [[ -n $(git status --porcelain) ]]; then
+          echo "Review the changes above."
+          gum confirm "Do you want to commit these changes?" || exit 0
+
+          echo "ENTER COMMIT MESSAGE"
+          COMMIT_MESSAGE=$(gum choose "CUSTOM MESSAGE" "feat: {{ .BRANCH }}" "fix: {{ .BRANCH }}" "BREAKING CHANGE: {{ .BRANCH }}")
+
+          if [ "$COMMIT_MESSAGE" == "CUSTOM MESSAGE" ]; then
+            CHANGED_FILES=$(git status --short | awk '{print $2}' | tr '\n' ' ')
+            COMMIT_MESSAGE=$(gum input --placeholder "Commit message" --value "Changed: $CHANGED_FILES")
+          fi
+
+          git commit --allow-empty -a -m "$COMMIT_MESSAGE"
+        else
+          echo "No changes to commit."
+        fi
+      - git push origin -u {{ .BRANCH }}
+
+  pr:
+    desc: Create pull request into main
+    cmds:
+      - task: commit
+      - gh pr create -t "{{ .BRANCH }}" -b "{{ .BRANCH }} branch into main"
+      - sleep 2s
+      - gh pr checks $(gh pr list | grep "^[^#;]" | awk '{print $1}') --watch
+      - gh pr merge $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --auto --rebase --delete-branch
+      - git checkout main && git pull
+
+  run-pre-commit-hook:
+    deps:
+      - check
+    desc: "Run the pre-commit hook script to replace .example.com with .example.com"
+    cmds:
+      - |
+        # Find all YAML files in the repository recursively, excluding Taskfile.yaml
+        files=$(find . -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.yml" -o -name "*.md" \) ! -name "Taskfile.yaml")
+
+        # Loop through each file
+        for file in $files; do
+          # Skip binary files
+          if file "$file" | grep -q "text"; then
+            # Replace the string and update the file
+            sed -i 's/\.sva\.de/\.example\.com/g' "$file"
+          fi
+        done
+
+        # Add all modified YAML files back to staging
+        git add $(git ls-files --modified | grep -E '\.ya?ml$')
+
+        exit 0
+    silent: false
