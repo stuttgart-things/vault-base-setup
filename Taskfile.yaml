@@ -44,6 +44,7 @@ tasks:
     desc: Commit + push code into branch
     deps:
       - check
+      - terraform:fmt
     cmds:
       - git branch --set-upstream-to=origin/{{ .BRANCH }}
       - git pull

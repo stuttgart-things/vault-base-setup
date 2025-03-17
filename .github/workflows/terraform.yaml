@@ -19,6 +19,6 @@ jobs:
     with:
       environment-name: k8s
       runs-on: ghr-vault-base-setup-skyami-cicd
-      terraform-version: 1.8.4
-      tflint-version: v0.51.1
+      terraform-version: 1.10.5
+      tflint-version: v0.55.1
       continue-error: false
