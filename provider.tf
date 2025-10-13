@@ -40,9 +40,9 @@ provider "kubectl" {
 }
 
 provider "helm" {
-  kubernetes {
-    config_context = var.context
+  kubernetes = {
     config_path    = var.kubeconfig_path
+    config_context = var.context
   }
 }
 
