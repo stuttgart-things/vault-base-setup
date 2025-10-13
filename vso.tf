@@ -7,8 +7,9 @@ resource "helm_release" "vso" {
   repository       = "https://helm.releases.hashicorp.com"
   chart            = "vault-secrets-operator"
   version          = "0.10.0"
-  atomic           = true
+  atomic           = var.vso_atomic
   timeout          = 240
+  wait             = var.vso_wait
 
   depends_on = [
     vault_kubernetes_auth_backend_role.backend_role
