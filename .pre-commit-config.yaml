@@ -42,3 +42,4 @@ repos:
         language: python
         # for backward compatibility
         files: .*  # all files
+        exclude: ^README\.md$

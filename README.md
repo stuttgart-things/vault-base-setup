@@ -4,18 +4,16 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
-<details><summary><b>BASE VAULT CONFIG (APPROLE)</b></summary>
+<details><summary><b>EXECUTE VAULT CONFIG (VAULT SERVER)</b></summary>
 
 ### MODULE CALL
 
 ```bash
-cat <<EOF > vault-base.hcl
+cat > vault-base.tf <<'EOF'
 module "vault-secrets-setup" {
-  source                   = "../"
-  kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"
-  context                  = "kind-helm-dev"
-  vault_addr               = "https://vault.172.18.0.2.nip.io"
-  cluster_name             = "kind-helm-dev"
+  source                   = "github.com/stuttgart-things/vault-base-setup"
+  kubeconfig_path          = "/home/sthings/.kube/demo-infra"
+  vault_addr               = "https://vault.demo-infra.sthings-vsphere.labul.sva.de"
   createDefaultAdminPolicy = true
   csi_enabled              = false
   vso_enabled              = false
@@ -24,9 +22,9 @@ module "vault-secrets-setup" {
 
   approle_roles = [
     {
-      name           = "s3"
-      token_policies = ["read-write-all-s3-kvv2"]
-    },
+      name           = "read-k8s"
+      token_policies = ["read-k8s"]
+    }
   ]
 
   secret_engines = [
@@ -37,20 +35,31 @@ module "vault-secrets-setup" {
       data_json   = <<EOT
       {
         "accessKey": "this",
-        "secretKey": "andThat" # pragma: allowlist secret
+        "secretKey": "andThat"
       }
       EOT
+    },
+    {
+      path        = "kubeconfigs"
+      name        = "kind-dev2"
+      description = "kubeconfig for kind-dev2 cluster"
+      data_json   = jsonencode({
+        kubeconfig = file("/home/sthings/.kube/kind-dev2")
+      })
     }
   ]
 
   kv_policies = [
     {
-      name         = "read-write-all-s3-kvv2"
-      capabilities = <<EOF
-path "apps/data/s3" {
-    capabilities = ["create", "read", "update", "patch", "list"]
+      name         = "read-k8s"
+      capabilities = <<CAPS
+path "apps/s3" {
+  capabilities = ["create", "read", "update", "patch", "list"]
 }
-EOF
+path "kubeconfigs/data/*" {
+  capabilities = ["read", "list"]
+}
+CAPS
     }
   ]
 }
@@ -88,14 +97,19 @@ cat <<EOF > test-approle.yaml
   vars:
     vault_approle_id: "INSERT-HERE"
     vault_approle_secret: "INSERT-HERE" # pragma: allowlist secret
-    vault_url: https://vault.172.18.0.2.nip.io
+    vault_url: "https://vault.demo-infra.example.com"
 
     username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=apps/data/s3:accessKey validate_certs=false auth_method=approle role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
+    kubeconfig: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=kubeconfigs/data/kind-dev2:kubeconfig validate_certs=false auth_method=approle role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}" # pragma: allowlist secret
 
   tasks:
     - name: Debug
       debug:
         var: username
+    - name: Debug
+      debug:
+        var: kubeconfig
+
 EOF
 
 ansible-playbook test-approle.yaml -vv
@@ -106,42 +120,28 @@ ansible-playbook test-approle.yaml -vv
 <details><summary><b>DEPLOY K8S AUTH ON CLUSTER</b></summary>
 
 ```hcl
+cat > vault-k8s.tf <<'EOF'
 module "vault-base-setup" {
-  source = "github.com/stuttgart-things/vault-base-setup"
-  vault_addr = "https://vault.dev11.4sthings.tiab.ssc.sva.de"
-  cluster_name = "labul-app1"
-  kubeconfig_path = "/home/sthings/.kube/labul-app1"
-  csi_enabled = true
-  namespace_csi = "vault"
-  vso_enabled = true
-  namespace_vso = "vault"
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.demo-infra.example.com"
+  cluster_name    = "kind-dev2"
+  context         = "kind-dev2"
+  skip_tls_verify = true
+  kubeconfig_path = "/home/sthings/.kube/kind-dev2"
+  csi_enabled     = true
+  namespace_csi   = "vault"
+  vso_enabled     = true
+  namespace_vso   = "vault"
   k8s_auths = [
     {
-	name = "dev"
-	namespace = "default"
-	token_policies = ["read-all-s3-kvv2", "read-write-all-s3-kvv2"]
-	token_ttl = 3600
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["read-k8s"]
+      token_ttl      = 3600
     },
   ]
 }
-```
-
-```yaml
----
-apiVersion: secrets.hashicorp.com/v1beta1
-kind: VaultStaticSecret
-metadata:
-  name: vault-static-apps1
-  namespace: default
-spec:
-  vaultAuthRef: dev
-  mount: apps
-  type: kv-v2
-  path: demo
-  refreshAfter: 10s
-  destination:
-    create: true
-    name: vso-app
+EOF
 ```
 
 ```bash
@@ -152,6 +152,24 @@ kubectl apply -f https://raw.githubusercontent.com/hashicorp/vault-secrets-opera
 export VAULT_TOKEN=<TOKEN>
 terraform init --upgrade
 terraform apply
+```
+
+```yaml
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: demo-infra
+  namespace: default
+spec:
+  vaultAuthRef: dev            # Reference to a VaultAuth CRD, e.g., token or approle
+  mount: kubeconfigs                  # The KV mount path in Vault
+  type: kv-v2                  # KV engine version
+  path: demo-infra             # Path under the mount
+  refreshAfter: 10s            # How often to sync from Vault
+  destination:
+    create: true
+    name: demo-infra-kube # Name of the Kubernetes Secret to create
 ```
 
 </details>
