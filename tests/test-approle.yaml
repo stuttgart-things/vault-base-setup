@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  become: true
+
+  vars:
+    vault_approle_id: "INSERT-HERE"
+    vault_approle_secret: "INSERT-HERE" # pragma: allowlist secret
+    vault_url: "https://vault.demo-infra.example.com"
+
+    username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=apps/data/s3:accessKey validate_certs=false auth_method=approle role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
+
+  tasks:
+    - name: Debug
+      debug:
+        var: username

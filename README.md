@@ -4,18 +4,18 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
-<details><summary><b>BASE VAULT CONFIG (APPROLE)</b></summary>
+<details><summary><b>EXECUTE VAULT CONFIG (VAULT SERVER)</b></summary>
 
 ### MODULE CALL
 
 ```bash
-cat <<EOF > vault-base.hcl
+cat <<EOF > vault-base.tf
 module "vault-secrets-setup" {
-  source                   = "../"
-  kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"
-  context                  = "kind-helm-dev"
-  vault_addr               = "https://vault.172.18.0.2.nip.io"
-  cluster_name             = "kind-helm-dev"
+  source                   = "github.com/stuttgart-things/vault-base-setup"
+  kubeconfig_path          = "/home/sthings/.kube/demo-infra"
+  context                  = "default"
+  vault_addr               = "https://vault.demo-infra.example.com"
+  cluster_name             = "demo-infra1"
   createDefaultAdminPolicy = true
   csi_enabled              = false
   vso_enabled              = false
@@ -26,7 +26,7 @@ module "vault-secrets-setup" {
     {
       name           = "s3"
       token_policies = ["read-write-all-s3-kvv2"]
-    },
+    }
   ]
 
   secret_engines = [
@@ -35,34 +35,34 @@ module "vault-secrets-setup" {
       name        = "s3"
       description = "minio app secrets"
       data_json   = <<EOT
-      {
-        "accessKey": "this",
-        "secretKey": "andThat" # pragma: allowlist secret
-      }
-      EOT
+{
+  "accessKey": "this",
+  "secretKey": "andThat"
+}
+EOT
     }
   ]
 
   kv_policies = [
     {
       name         = "read-write-all-s3-kvv2"
-      capabilities = <<EOF
+      capabilities = <<POLICY
 path "apps/data/s3" {
-    capabilities = ["create", "read", "update", "patch", "list"]
+  capabilities = ["create", "read", "update", "patch", "list"]
 }
-EOF
+POLICY
     }
   ]
 }
 
 output "role_ids" {
   description = "Role IDs from the vault approle module"
-  value       = module.vault-secrets-setup.role_id
+  value       = module.vault-secrets-setup.role_ids
 }
 
 output "secret_ids" {
   description = "Secret IDs from the vault approle module"
-  value       = module.vault-secrets-setup.secret_id
+  value       = module.vault-secrets-setup.secret_ids
   sensitive   = true
 }
 EOF
@@ -88,7 +88,7 @@ cat <<EOF > test-approle.yaml
   vars:
     vault_approle_id: "INSERT-HERE"
     vault_approle_secret: "INSERT-HERE" # pragma: allowlist secret
-    vault_url: https://vault.172.18.0.2.nip.io
+    vault_url: "https://vault.demo-infra.example.com"
 
     username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=apps/data/s3:accessKey validate_certs=false auth_method=approle role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
 
@@ -108,7 +108,7 @@ ansible-playbook test-approle.yaml -vv
 ```hcl
 module "vault-base-setup" {
   source = "github.com/stuttgart-things/vault-base-setup"
-  vault_addr = "https://vault.dev11.4sthings.tiab.ssc.sva.de"
+  vault_addr = "https://vault.demo-infra.example.com"
   cluster_name = "labul-app1"
   kubeconfig_path = "/home/sthings/.kube/labul-app1"
   csi_enabled = true
