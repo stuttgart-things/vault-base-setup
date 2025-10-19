@@ -160,3 +160,17 @@ variable "skip_tls_verify" {
   type        = bool
   default     = false
 }
+
+# Whether Helm should wait for resources to become ready
+variable "vso_wait" {
+  description = "Whether to wait for resources to be ready before marking the Helm release as successful."
+  type        = bool
+  default     = false
+}
+
+# Whether the Helm release should roll back automatically on failure
+variable "vso_atomic" {
+  description = "Whether to roll back the Helm release automatically on failure."
+  type        = bool
+  default     = false
+}
