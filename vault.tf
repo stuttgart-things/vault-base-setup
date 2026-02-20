@@ -6,7 +6,7 @@ resource "helm_release" "vault" {
   create_namespace = true
   repository       = "https://helm.releases.hashicorp.com"
   chart            = "vault"
-  version          = "0.29.1"
+  version          = "0.32.0"
   atomic           = true
   timeout          = 240
 
