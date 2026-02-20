@@ -31,7 +31,7 @@ variable "k8s_auths" {
 
 variable "kubeconfig_path" {
   type        = string
-  default     = "~/.kube/config"
+  default     = null
   description = "kubeconfig path"
 }
 

@@ -136,12 +136,6 @@ resource "vault_kubernetes_auth_backend_role" "backend_role" {
 }
 
 // VARIABLES
-variable "kubeconfig_path" {
-  description = "Path to kubeconfig file"
-  type        = string
-  default     = null
-}
-
 variable "kubeconfig_content" {
   description = "Kubeconfig content as string (alternative to kubeconfig_path)"
   type        = string

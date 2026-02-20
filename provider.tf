@@ -32,17 +32,35 @@ terraform {
 provider "kubernetes" {
   config_context = var.context
   config_path    = var.kubeconfig_path
+
+  # When using kubeconfig_content, parse and set directly
+  host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
+  cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
+  client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
+  client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
 }
 
 provider "kubectl" {
   config_context = var.context
   config_path    = var.kubeconfig_path
+
+  # When using kubeconfig_content, parse and set directly
+  host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
+  cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
+  client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
+  client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
 }
 
 provider "helm" {
   kubernetes = {
     config_path    = var.kubeconfig_path
     config_context = var.context
+
+    # When using kubeconfig_content, parse and set directly
+    host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
+    cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
+    client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
+    client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
   }
 }
 
