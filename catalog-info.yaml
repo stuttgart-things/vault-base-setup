@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vault-base-setup
+  description: Terraform module for base-setup configuration of HashiCorp Vault
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: stuttgart-things/vault-base-setup
+  tags:
+    - terraform
+    - vault
+    - pki
+    - cert-manager
+spec:
+  type: library
+  lifecycle: production
+  owner: stuttgart-things

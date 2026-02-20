@@ -1,0 +1,10 @@
+site_name: vault-base-setup
+site_description: Terraform module for base-setup configuration of HashiCorp Vault
+repo_url: https://github.com/stuttgart-things/vault-base-setup
+
+nav:
+  - Overview: index.md
+  - PKI CA with cert-manager: pki-ca.md
+
+plugins:
+  - techdocs-core
