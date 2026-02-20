@@ -18,7 +18,7 @@ jobs:
     uses: stuttgart-things/github-workflow-templates/.github/workflows/call-validate-terraform.yaml@main
     with:
       environment-name: k8s
-      runs-on: ghr-vault-base-setup-skyami-cicd
+      runs-on: ghr-vault-base-setup-in-cluster
       terraform-version: 1.10.5
       tflint-version: v0.55.1
       continue-error: false

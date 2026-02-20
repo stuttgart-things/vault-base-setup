@@ -4,6 +4,144 @@ terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
 
+<details><summary><b>KUBECONFIG USAGE EXAMPLES</b></summary>
+
+### Option 1: Using File Path (Existing Method)
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.demo-infra.example.com"
+  cluster_name    = "kind-dev2"
+  context         = "kind-dev2"
+  skip_tls_verify = true
+  kubeconfig_path = "/home/sthings/.kube/kind-dev2"
+  csi_enabled     = true
+  namespace_csi   = "vault"
+  vso_enabled     = true
+  namespace_vso   = "vault"
+  k8s_auths = [
+    {
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["read-k8s"]
+      token_ttl      = 3600
+    },
+  ]
+}
+```
+
+### Option 2: Using String Content (New Method)
+
+```hcl
+module "vault-base-setup" {
+  source             = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr         = "https://vault.demo-infra.example.com"
+  cluster_name       = "kind-dev2"
+  context            = "kind-dev2"
+  skip_tls_verify    = true
+  kubeconfig_content = file("/home/sthings/.kube/kind-dev2")
+  csi_enabled        = true
+  namespace_csi      = "vault"
+  vso_enabled        = true
+  namespace_vso      = "vault"
+  k8s_auths = [
+    {
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["read-k8s"]
+      token_ttl      = 3600
+    },
+  ]
+}
+```
+
+### Option 2b: Using an Environment Variable
+
+```hcl
+variable "kubeconfig_content_from_env" {
+  type      = string
+  sensitive = true
+}
+
+module "vault-base-setup" {
+  source             = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr         = "https://vault.demo-infra.example.com"
+  cluster_name       = "kind-dev2"
+  context            = "kind-dev2"
+  skip_tls_verify    = true
+  kubeconfig_content = var.kubeconfig_content_from_env
+  csi_enabled        = true
+  namespace_csi      = "vault"
+  vso_enabled        = true
+  namespace_vso      = "vault"
+  k8s_auths = [
+    {
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["read-k8s"]
+      token_ttl      = 3600
+    },
+  ]
+}
+```
+
+```bash
+export TF_VAR_kubeconfig_content_from_env=$(cat /home/sthings/.kube/kind-dev2)
+```
+
+### Option 2c. Using a Heredoc (Inline String)
+
+```hcl
+module "vault-base-setup" {
+  source             = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr         = "https://vault.demo-infra.example.com"
+  cluster_name       = "kind-dev2"
+  context            = "kind-dev2"
+  skip_tls_verify    = true
+  kubeconfig_content = <<-EOT
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: LS0tLS1CRUdJTi...
+        server: https://127.0.0.1:6443
+      name: kind-dev2
+    contexts:
+    - context:
+        cluster: kind-dev2
+        user: kind-dev2
+      name: kind-dev2
+    current-context: kind-dev2
+    kind: Config
+    preferences: {}
+    users:
+    - name: kind-dev2
+      user:
+        client-certificate-data: LS0tLS1CRUdJTi...
+        client-key-data: LS0tLS1CRUdJTi...
+  EOT
+  csi_enabled        = true
+  namespace_csi      = "vault"
+  vso_enabled        = true
+  namespace_vso      = "vault"
+  k8s_auths = [
+    {
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["read-k8s"]
+      token_ttl      = 3600
+    },
+  ]
+}
+```
+
+Important Notes:
+* Exactly one of kubeconfig_path or kubeconfig_content must be provided
+* kubeconfig_content is marked as sensitive to prevent accidental exposure in logs
+* Using file() function reads the file at plan time, while kubeconfig_path reads it during data source execution
+
+</details>
+
 <details><summary><b>EXECUTE VAULT CONFIG (VAULT SERVER)</b></summary>
 
 ### MODULE CALL

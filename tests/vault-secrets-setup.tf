@@ -1,3 +1,7 @@
+terraform {
+  required_version = ">= 1.10.5"
+}
+
 module "vault-secrets-setup" {
   source                   = "../"
   kubeconfig_path          = "/home/sthings/.kube/kind-helm-dev"

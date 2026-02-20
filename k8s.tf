@@ -135,13 +135,42 @@ resource "vault_kubernetes_auth_backend_role" "backend_role" {
 
 }
 
+// VARIABLES
+variable "kubeconfig_content" {
+  description = "Kubeconfig content as string (alternative to kubeconfig_path)"
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
+// VALIDATION
+locals {
+  # Ensure exactly one option is provided
+  kubeconfig_options_count = (
+    (var.kubeconfig_path != null ? 1 : 0) +
+    (var.kubeconfig_content != null ? 1 : 0)
+  )
+}
+
+resource "null_resource" "validate_kubeconfig_input" {
+  lifecycle {
+    precondition {
+      condition     = local.kubeconfig_options_count == 1
+      error_message = "Exactly one of 'kubeconfig_path' or 'kubeconfig_content' must be provided."
+    }
+  }
+}
+
 // KUBECONFIG FILE HANDLING
 data "local_file" "kubeconfig" {
+  count    = var.kubeconfig_path != null ? 1 : 0
   filename = var.kubeconfig_path
 }
 
 locals {
-  kubeconfig = yamldecode(data.local_file.kubeconfig.content)
+  # Use either file content or provided string
+  kubeconfig_raw = var.kubeconfig_path != null ? data.local_file.kubeconfig[0].content : var.kubeconfig_content
+  kubeconfig     = yamldecode(local.kubeconfig_raw)
 }
 
 data "kubernetes_secret" "vault" {
