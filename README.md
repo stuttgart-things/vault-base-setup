@@ -312,6 +312,66 @@ spec:
 
 </details>
 
+<details><summary><b>CSI PROVIDER EXAMPLE APPLICATION</b></summary>
+
+### SecretProviderClass
+
+```yaml
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: vault-lab-creds
+  namespace: default
+spec:
+  provider: vault
+  parameters:
+    objects: |
+      - objectName: "lab"
+        secretPath: "env/data/labul"
+        secretKey: "lab"
+    roleName: dev
+    vaultAddress: https://vault.dev11.4sthings.tiab.ssc.sva.de
+    vaultKubernetesMountPath: utah-dev
+    vaultSkipTLSVerify: "true"
+```
+
+### Example Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3
+  labels:
+    app: demo
+spec:
+  selector:
+    matchLabels:
+      app: demo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      serviceAccountName: dev
+      containers:
+        - name: app
+          image: nginx
+          volumeMounts:
+            - name: 'vault-user-creds'
+              mountPath: '/mnt/secrets-store'
+              readOnly: true
+      volumes:
+        - name: vault-user-creds
+          csi:
+            driver: 'secrets-store.csi.k8s.io'
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: 'vault-lab-creds'
+```
+
+</details>
 
 <details><summary>CALL MODULE W/ VALUES</summary>
 
