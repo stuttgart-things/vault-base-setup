@@ -312,6 +312,86 @@ spec:
 
 </details>
 
+<details><summary><b>VAULT PKI CA WITH CERT-MANAGER</b></summary>
+
+### Module Call
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.demo-infra.example.com"
+  cluster_name    = "kind-dev2"
+  context         = "kind-dev2"
+  skip_tls_verify = true
+  kubeconfig_path = "/home/sthings/.kube/kind-dev2"
+  csi_enabled     = false
+  vso_enabled     = false
+
+  # PKI CA configuration
+  pki_enabled     = true
+  pki_path        = "pki"
+  pki_common_name = "example.com"
+  pki_organization = "My Org"
+  pki_root_ttl    = "87600h"
+  pki_roles = [
+    {
+      name             = "example-dot-com"
+      allowed_domains  = ["example.com"]
+      allow_subdomains = true
+      max_ttl          = "720h"
+    }
+  ]
+
+  k8s_auths = [
+    {
+      name           = "dev"
+      namespace      = "default"
+      token_policies = ["pki-issue"]
+      token_ttl      = 3600
+    },
+  ]
+}
+```
+
+### cert-manager ClusterIssuer
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: vault-issuer
+spec:
+  vault:
+    path: pki/sign/example-dot-com
+    server: https://vault.demo-infra.example.com
+    auth:
+      kubernetes:
+        role: dev
+        mountPath: /v1/auth/kind-dev2-dev
+        serviceAccountRef:
+          name: dev
+```
+
+### cert-manager Certificate
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-app-tls
+  namespace: default
+spec:
+  secretName: my-app-tls
+  issuerRef:
+    name: vault-issuer
+    kind: ClusterIssuer
+  commonName: myapp.example.com
+  dnsNames:
+    - myapp.example.com
+```
+
+</details>
+
 <details><summary><b>DEPLOY VAULT SERVER WITH CSI PROVIDER</b></summary>
 
 ```hcl

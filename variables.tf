@@ -191,6 +191,93 @@ variable "vault_csi_enabled" {
   default     = true
 }
 
+variable "pki_enabled" {
+  description = "Enable Vault PKI secrets engine"
+  type        = bool
+  default     = false
+}
+
+variable "pki_path" {
+  description = "Mount path for PKI secrets engine"
+  type        = string
+  default     = "pki"
+}
+
+variable "pki_common_name" {
+  description = "Common name for the root CA certificate"
+  type        = string
+  default     = "example.com"
+}
+
+variable "pki_organization" {
+  description = "Organization for the root CA certificate"
+  type        = string
+  default     = ""
+}
+
+variable "pki_country" {
+  description = "Country for the root CA certificate"
+  type        = string
+  default     = ""
+}
+
+variable "pki_type" {
+  description = "Type of root certificate to generate (internal or exported)"
+  type        = string
+  default     = "internal"
+}
+
+variable "pki_key_type" {
+  description = "Key type for the CA (rsa or ec)"
+  type        = string
+  default     = "rsa"
+}
+
+variable "pki_key_bits" {
+  description = "Key size in bits (2048, 4096 for RSA; 256, 384 for EC)"
+  type        = number
+  default     = 2048
+}
+
+variable "pki_root_ttl" {
+  description = "TTL for the root CA certificate"
+  type        = string
+  default     = "87600h"
+}
+
+variable "pki_default_ttl_seconds" {
+  description = "Default lease TTL for PKI secrets engine in seconds"
+  type        = number
+  default     = 3600
+}
+
+variable "pki_max_ttl_seconds" {
+  description = "Max lease TTL for PKI secrets engine in seconds"
+  type        = number
+  default     = 315360000
+}
+
+variable "pki_policy_name" {
+  description = "Name of the Vault policy for PKI access"
+  type        = string
+  default     = "pki-issue"
+}
+
+variable "pki_roles" {
+  description = "List of PKI roles for certificate issuance"
+  type = list(object({
+    name             = string
+    allowed_domains  = list(string)
+    allow_subdomains = bool
+    max_ttl          = string
+    ttl              = optional(string)
+    allow_bare_domains = optional(bool, false)
+    key_type         = optional(string)
+    key_bits         = optional(number)
+  }))
+  default = []
+}
+
 # Whether Helm should wait for resources to become ready
 variable "vso_wait" {
   description = "Whether to wait for resources to be ready before marking the Helm release as successful."
