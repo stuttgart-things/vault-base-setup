@@ -312,6 +312,28 @@ spec:
 
 </details>
 
+<details><summary><b>DEPLOY VAULT SERVER WITH CSI PROVIDER</b></summary>
+
+```hcl
+module "vault-base-setup" {
+  source                 = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr             = "https://vault.demo-infra.example.com"
+  cluster_name           = "kind-dev2"
+  context                = "kind-dev2"
+  skip_tls_verify        = true
+  kubeconfig_path        = "/home/sthings/.kube/kind-dev2"
+  vault_enabled          = true
+  vault_dev_mode         = true
+  vault_injector_enabled = false
+  vault_csi_enabled      = true
+  namespace_vault        = "vault"
+  csi_enabled            = false
+  vso_enabled            = false
+}
+```
+
+</details>
+
 <details><summary><b>CSI PROVIDER EXAMPLE APPLICATION</b></summary>
 
 ### SecretProviderClass

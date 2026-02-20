@@ -161,6 +161,36 @@ variable "skip_tls_verify" {
   default     = false
 }
 
+variable "vault_enabled" {
+  description = "Enable Vault server deployment"
+  type        = bool
+  default     = false
+}
+
+variable "namespace_vault" {
+  description = "Namespace for Vault server deployment"
+  type        = string
+  default     = "vault"
+}
+
+variable "vault_dev_mode" {
+  description = "Enable Vault dev mode"
+  type        = bool
+  default     = true
+}
+
+variable "vault_injector_enabled" {
+  description = "Enable Vault injector"
+  type        = bool
+  default     = false
+}
+
+variable "vault_csi_enabled" {
+  description = "Enable Vault CSI provider"
+  type        = bool
+  default     = true
+}
+
 # Whether Helm should wait for resources to become ready
 variable "vso_wait" {
   description = "Whether to wait for resources to be ready before marking the Helm release as successful."
