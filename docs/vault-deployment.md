@@ -58,6 +58,17 @@ Deploy a Vault server using the Bitnami Helm chart with optional auto-unseal, in
 
 ## Basic Deployment
 
+When `vault_autounseal_enabled` is `true`, the [vault-autounseal](https://github.com/pytoshka/vault-autounseal) chart is deployed alongside Vault. It watches for the Vault pod (`app.kubernetes.io/component=server`) and automatically initializes and unseals it. Unseal keys and the root token are stored as Kubernetes secrets in the Vault namespace:
+
+- `vault-keys` — contains the unseal key shares
+- `vault-root-token` — contains the root token
+
+Retrieve the root token:
+
+```bash
+kubectl get secret vault-root-token -n vault -o jsonpath='{.data.root_token}' | base64 -d
+```
+
 ```hcl
 module "vault-base-setup" {
   source                   = "github.com/stuttgart-things/vault-base-setup"

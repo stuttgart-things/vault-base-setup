@@ -14,6 +14,7 @@ Terraform module for base-setup configuration of HashiCorp Vault.
 | CSI Provider | `csi_enabled` | Deploy Secrets Store CSI Driver integration |
 | VSO | `vso_enabled` | Deploy Vault Secrets Operator |
 | Vault Server | `vault_enabled` | Deploy Vault server via Bitnami Helm chart with optional ingress/TLS or Gateway API |
+| Vault Auto-Unseal | `vault_autounseal_enabled` | Automatically initialize and unseal Vault using vault-autounseal |
 | **PKI CA** | `pki_enabled` | Mount PKI secrets engine with root CA for cert-manager integration |
 
 ## Requirements
