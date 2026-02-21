@@ -173,22 +173,189 @@ variable "namespace_vault" {
   default     = "vault"
 }
 
-variable "vault_dev_mode" {
-  description = "Enable Vault dev mode"
-  type        = bool
-  default     = true
-}
-
 variable "vault_injector_enabled" {
   description = "Enable Vault injector"
   type        = bool
   default     = false
 }
 
-variable "vault_csi_enabled" {
-  description = "Enable Vault CSI provider"
+variable "vault_chart_repository" {
+  description = "OCI Helm chart repository for Vault"
+  type        = string
+  default     = "oci://registry-1.docker.io/bitnamicharts/vault"
+}
+
+variable "vault_chart_version" {
+  description = "Vault Helm chart version"
+  type        = string
+  default     = "1.9.0"
+}
+
+variable "vault_image_registry" {
+  description = "Vault server image registry"
+  type        = string
+  default     = "ghcr.io"
+}
+
+variable "vault_image_repository" {
+  description = "Vault server image repository"
+  type        = string
+  default     = "stuttgart-things/vault"
+}
+
+variable "vault_image_tag" {
+  description = "Vault server image tag"
+  type        = string
+  default     = "1.20.2-debian-12-r2"
+}
+
+variable "vault_ingress_enabled" {
+  description = "Enable ingress for Vault server"
+  type        = bool
+  default     = false
+}
+
+variable "vault_ingress_class" {
+  description = "Ingress class name for Vault"
+  type        = string
+  default     = "nginx"
+}
+
+variable "vault_ingress_hostname" {
+  description = "Hostname for Vault ingress"
+  type        = string
+  default     = ""
+}
+
+variable "vault_ingress_issuer_name" {
+  description = "cert-manager issuer name for Vault ingress TLS"
+  type        = string
+  default     = ""
+}
+
+variable "vault_ingress_issuer_kind" {
+  description = "cert-manager issuer kind (ClusterIssuer or Issuer)"
+  type        = string
+  default     = "ClusterIssuer"
+
+  validation {
+    condition     = contains(["ClusterIssuer", "Issuer"], var.vault_ingress_issuer_kind)
+    error_message = "vault_ingress_issuer_kind must be either 'ClusterIssuer' or 'Issuer'."
+  }
+}
+
+variable "vault_storage_class" {
+  description = "Storage class for Vault persistent volumes"
+  type        = string
+  default     = ""
+}
+
+variable "vault_volume_permissions" {
+  description = "Enable init container to fix volume permissions"
   type        = bool
   default     = true
+}
+
+variable "vault_injector_image_registry" {
+  description = "Vault injector image registry"
+  type        = string
+  default     = "ghcr.io"
+}
+
+variable "vault_injector_image_repository" {
+  description = "Vault injector image repository"
+  type        = string
+  default     = "stuttgart-things/vault-k8s"
+}
+
+variable "vault_injector_image_tag" {
+  description = "Vault injector image tag"
+  type        = string
+  default     = "1.7.0-debian-12-r4"
+}
+
+variable "vault_os_shell_image_registry" {
+  description = "OS shell image registry (used for volume permissions init container)"
+  type        = string
+  default     = "ghcr.io"
+}
+
+variable "vault_os_shell_image_repository" {
+  description = "OS shell image repository"
+  type        = string
+  default     = "stuttgart-things/os-shell"
+}
+
+variable "vault_os_shell_image_tag" {
+  description = "OS shell image tag"
+  type        = string
+  default     = "12-debian-12-r50"
+}
+
+variable "vault_wait" {
+  description = "Whether to wait for Vault pods to be ready (set to false when using auto-unseal)"
+  type        = bool
+  default     = false
+}
+
+variable "vault_atomic" {
+  description = "Whether to rollback Vault Helm release on failure"
+  type        = bool
+  default     = false
+}
+
+variable "vault_autounseal_enabled" {
+  description = "Enable vault-autounseal deployment for automatic init and unseal"
+  type        = bool
+  default     = false
+}
+
+variable "vault_autounseal_chart_version" {
+  description = "vault-autounseal Helm chart version"
+  type        = string
+  default     = "0.5.3"
+}
+
+variable "vault_autounseal_secret_shares" {
+  description = "Number of key shares for Vault unseal"
+  type        = number
+  default     = 3
+}
+
+variable "vault_autounseal_secret_threshold" {
+  description = "Number of key shares required to unseal Vault"
+  type        = number
+  default     = 2
+}
+
+variable "vault_gateway_enabled" {
+  description = "Enable Gateway API HTTPRoute for Vault"
+  type        = bool
+  default     = false
+}
+
+variable "vault_gateway_hostname" {
+  description = "Hostname for Vault Gateway API HTTPRoute"
+  type        = string
+  default     = ""
+}
+
+variable "vault_gateway_name" {
+  description = "Name of the Gateway resource to attach the HTTPRoute to"
+  type        = string
+  default     = ""
+}
+
+variable "vault_gateway_namespace" {
+  description = "Namespace of the Gateway resource"
+  type        = string
+  default     = "default"
+}
+
+variable "vault_gateway_section" {
+  description = "Gateway listener section name (e.g. https, http)"
+  type        = string
+  default     = "https"
 }
 
 variable "pki_enabled" {
@@ -266,14 +433,14 @@ variable "pki_policy_name" {
 variable "pki_roles" {
   description = "List of PKI roles for certificate issuance"
   type = list(object({
-    name             = string
-    allowed_domains  = list(string)
-    allow_subdomains = bool
-    max_ttl          = string
-    ttl              = optional(string)
+    name               = string
+    allowed_domains    = list(string)
+    allow_subdomains   = bool
+    max_ttl            = string
+    ttl                = optional(string)
     allow_bare_domains = optional(bool, false)
-    key_type         = optional(string)
-    key_bits         = optional(number)
+    key_type           = optional(string)
+    key_bits           = optional(number)
   }))
   default = []
 }
