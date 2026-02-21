@@ -476,6 +476,70 @@ module "vault-base-setup" {
 
 </details>
 
+<details><summary><b>PKI CA BOOTSTRAP WORKFLOW</b></summary>
+
+When Vault is the PKI CA but needs TLS on its own ingress, use the bootstrap workflow: deploy cert-manager with a self-signed CA first, then configure Vault PKI and create a Vault-backed ClusterIssuer.
+
+**Two-phase apply required:** Phase 1 deploys cert-manager + bootstrap CA + Vault. Phase 2 configures PKI + Vault ClusterIssuer.
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.demo-infra.example.com"
+  cluster_name    = "my-cluster"
+  context         = "default"
+  skip_tls_verify = true
+  kubeconfig_path = "/home/sthings/.kube/my-cluster"
+
+  # Vault with auto-unseal + ingress
+  vault_enabled            = true
+  vault_injector_enabled   = false
+  namespace_vault          = "vault"
+  vault_storage_class      = "openebs-zfs"
+  vault_autounseal_enabled = true
+  vault_ingress_enabled    = true
+  vault_ingress_class      = "nginx"
+  vault_ingress_hostname   = "vault.demo-infra.example.com"
+
+  # cert-manager + bootstrap CA (auto-wires ingress issuer)
+  certmanager_enabled           = true
+  certmanager_bootstrap_enabled = true
+
+  # PKI + Vault ClusterIssuer (second apply)
+  pki_enabled      = true
+  pki_common_name  = "example.com"
+  pki_organization = "My Org"
+  pki_roles = [
+    {
+      name             = "example-dot-com"
+      allowed_domains  = ["example.com"]
+      allow_subdomains = true
+      max_ttl          = "720h"
+    }
+  ]
+  certmanager_vault_issuer_enabled  = true
+  certmanager_vault_issuer_pki_role = "example-dot-com"
+
+  csi_enabled = false
+  vso_enabled = false
+}
+```
+
+```bash
+# Phase 1
+terraform apply \
+  -target=helm_release.cert_manager \
+  -target=kubectl_manifest.bootstrap_ca_clusterissuer \
+  -target=helm_release.vault \
+  -target=helm_release.vault_autounseal
+
+# Phase 2 (after Vault is unsealed)
+export VAULT_TOKEN=$(kubectl get secret vault-root-token -n vault -o jsonpath='{.data.root_token}' | base64 -d)
+terraform apply
+```
+
+</details>
+
 <details><summary><b>CSI PROVIDER EXAMPLE APPLICATION</b></summary>
 
 ### SecretProviderClass

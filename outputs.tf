@@ -30,3 +30,13 @@ output "pki_roles" {
     for role in vault_pki_secret_backend_role.roles : role.name
   ]
 }
+
+output "certmanager_bootstrap_ca_issuer" {
+  description = "Bootstrap CA ClusterIssuer name"
+  value       = var.certmanager_bootstrap_enabled ? var.certmanager_bootstrap_ca_issuer_name : null
+}
+
+output "certmanager_vault_issuer" {
+  description = "Vault-backed ClusterIssuer name"
+  value       = var.certmanager_vault_issuer_enabled ? var.certmanager_vault_issuer_name : null
+}

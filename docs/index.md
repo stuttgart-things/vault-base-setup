@@ -16,6 +16,7 @@ Terraform module for base-setup configuration of HashiCorp Vault.
 | Vault Server | `vault_enabled` | Deploy Vault server via Bitnami Helm chart with optional ingress/TLS or Gateway API |
 | Vault Auto-Unseal | `vault_autounseal_enabled` | Automatically initialize and unseal Vault using vault-autounseal |
 | **PKI CA** | `pki_enabled` | Mount PKI secrets engine with root CA for cert-manager integration |
+| **PKI CA Bootstrap** | `certmanager_bootstrap_enabled` | Self-signed CA bootstrap chain for Vault ingress TLS with automated Vault ClusterIssuer |
 
 ## Requirements
 
