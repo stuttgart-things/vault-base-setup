@@ -4,6 +4,7 @@ repo_url: https://github.com/stuttgart-things/vault-base-setup
 
 nav:
   - Overview: index.md
+  - Vault Deployment: vault-deployment.md
   - PKI CA with cert-manager: pki-ca.md
 
 plugins:

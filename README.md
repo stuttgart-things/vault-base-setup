@@ -392,23 +392,77 @@ spec:
 
 </details>
 
-<details><summary><b>DEPLOY VAULT SERVER WITH CSI PROVIDER</b></summary>
+<details><summary><b>DEPLOY VAULT SERVER (BITNAMI)</b></summary>
 
 ```hcl
 module "vault-base-setup" {
-  source                 = "github.com/stuttgart-things/vault-base-setup"
-  vault_addr             = "https://vault.demo-infra.example.com"
-  cluster_name           = "kind-dev2"
-  context                = "kind-dev2"
-  skip_tls_verify        = true
-  kubeconfig_path        = "/home/sthings/.kube/kind-dev2"
-  vault_enabled          = true
-  vault_dev_mode         = true
-  vault_injector_enabled = false
-  vault_csi_enabled      = true
-  namespace_vault        = "vault"
-  csi_enabled            = false
-  vso_enabled            = false
+  source                   = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr               = "https://vault.example.com"
+  cluster_name             = "my-cluster"
+  context                  = "default"
+  skip_tls_verify          = true
+  kubeconfig_path          = "/home/sthings/.kube/my-cluster"
+  vault_enabled            = true
+  vault_injector_enabled   = false
+  namespace_vault          = "vault"
+  vault_storage_class      = "openebs-hostpath"
+  vault_autounseal_enabled = true
+  csi_enabled              = false
+  vso_enabled              = false
+}
+```
+
+</details>
+
+<details><summary><b>DEPLOY VAULT SERVER WITH INGRESS/TLS</b></summary>
+
+```hcl
+module "vault-base-setup" {
+  source                    = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr                = "https://vault.demo-infra.example.com"
+  cluster_name              = "my-cluster"
+  context                   = "default"
+  skip_tls_verify           = true
+  kubeconfig_path           = "/home/sthings/.kube/my-cluster"
+  vault_enabled             = true
+  vault_injector_enabled    = false
+  namespace_vault           = "vault"
+  vault_storage_class       = "openebs-zfs"
+  vault_autounseal_enabled  = true
+  vault_ingress_enabled     = true
+  vault_ingress_class       = "nginx"
+  vault_ingress_hostname    = "vault.demo-infra.example.com"
+  vault_ingress_issuer_name = "cluster-issuer-approle"
+  vault_ingress_issuer_kind = "ClusterIssuer"
+  csi_enabled               = false
+  vso_enabled               = false
+}
+```
+
+</details>
+
+<details><summary><b>DEPLOY VAULT SERVER WITH GATEWAY API</b></summary>
+
+```hcl
+module "vault-base-setup" {
+  source                   = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr               = "https://vault.whatever.sthings-vsphere.labul.sva.de"
+  cluster_name             = "my-cluster"
+  context                  = "default"
+  skip_tls_verify          = true
+  kubeconfig_path          = "/home/sthings/.kube/my-cluster"
+  vault_enabled            = true
+  vault_injector_enabled   = false
+  namespace_vault          = "vault"
+  vault_storage_class      = "openebs-hostpath"
+  vault_autounseal_enabled = true
+  vault_gateway_enabled    = true
+  vault_gateway_hostname   = "vault.whatever.sthings-vsphere.labul.sva.de"
+  vault_gateway_name       = "whatever-gateway"
+  vault_gateway_namespace  = "default"
+  vault_gateway_section    = "https"
+  csi_enabled              = false
+  vso_enabled              = false
 }
 ```
 
