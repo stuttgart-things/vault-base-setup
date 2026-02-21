@@ -42,7 +42,7 @@ provider "kubernetes" {
   host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
   cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
   client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
-  client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
+  client_key             = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
 }
 
 provider "kubectl" {
@@ -53,7 +53,7 @@ provider "kubectl" {
   host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
   cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
   client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
-  client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
+  client_key             = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
 }
 
 provider "helm" {
@@ -65,7 +65,7 @@ provider "helm" {
     host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
     cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
     client_certificate     = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-certificate-data"]) : null
-    client_key            = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
+    client_key             = var.kubeconfig_content != null ? base64decode(local.kubeconfig.users[0].user["client-key-data"]) : null
   }
 }
 

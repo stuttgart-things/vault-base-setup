@@ -24,9 +24,9 @@ resource "vault_pki_secret_backend_root_cert" "root" {
 
 // CONFIGURE PKI URLS
 resource "vault_pki_secret_backend_config_urls" "urls" {
-  count                 = var.pki_enabled ? 1 : 0
-  backend               = vault_mount.pki[0].path
-  issuing_certificates  = ["${var.vault_addr}/v1/${var.pki_path}/ca"]
+  count                   = var.pki_enabled ? 1 : 0
+  backend                 = vault_mount.pki[0].path
+  issuing_certificates    = ["${var.vault_addr}/v1/${var.pki_path}/ca"]
   crl_distribution_points = ["${var.vault_addr}/v1/${var.pki_path}/crl"]
 
   depends_on = [vault_pki_secret_backend_root_cert.root]
@@ -40,16 +40,16 @@ resource "vault_pki_secret_backend_role" "roles" {
     if var.pki_enabled
   }
 
-  backend          = vault_mount.pki[0].path
-  name             = each.value["name"]
-  ttl              = lookup(each.value, "ttl", null)
-  max_ttl          = each.value["max_ttl"]
-  allowed_domains  = each.value["allowed_domains"]
-  allow_subdomains = each.value["allow_subdomains"]
+  backend            = vault_mount.pki[0].path
+  name               = each.value["name"]
+  ttl                = lookup(each.value, "ttl", null)
+  max_ttl            = each.value["max_ttl"]
+  allowed_domains    = each.value["allowed_domains"]
+  allow_subdomains   = each.value["allow_subdomains"]
   allow_bare_domains = lookup(each.value, "allow_bare_domains", false)
-  key_type         = lookup(each.value, "key_type", var.pki_key_type)
-  key_bits         = lookup(each.value, "key_bits", var.pki_key_bits)
-  generate_lease   = true
+  key_type           = lookup(each.value, "key_type", var.pki_key_type)
+  key_bits           = lookup(each.value, "key_bits", var.pki_key_bits)
+  generate_lease     = true
 
   depends_on = [vault_pki_secret_backend_config_urls.urls]
 }

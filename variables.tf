@@ -445,6 +445,105 @@ variable "pki_roles" {
   default = []
 }
 
+# CERT-MANAGER VARIABLES
+variable "certmanager_enabled" {
+  description = "Deploy cert-manager via Helm"
+  type        = bool
+  default     = false
+}
+
+variable "certmanager_namespace" {
+  description = "Namespace for cert-manager"
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "certmanager_chart_version" {
+  description = "cert-manager Helm chart version"
+  type        = string
+  default     = "v1.17.1"
+}
+
+# BOOTSTRAP CA VARIABLES
+variable "certmanager_bootstrap_enabled" {
+  description = "Create self-signed CA bootstrap chain for Vault ingress TLS"
+  type        = bool
+  default     = false
+}
+
+variable "certmanager_selfsigned_issuer_name" {
+  description = "Name of the self-signed ClusterIssuer"
+  type        = string
+  default     = "selfsigned-issuer"
+}
+
+variable "certmanager_bootstrap_ca_name" {
+  description = "Name of the bootstrap CA Certificate resource"
+  type        = string
+  default     = "bootstrap-ca"
+}
+
+variable "certmanager_bootstrap_ca_common_name" {
+  description = "Common name for the bootstrap CA certificate"
+  type        = string
+  default     = "Bootstrap CA"
+}
+
+variable "certmanager_bootstrap_ca_secret_name" {
+  description = "Secret name for the bootstrap CA key pair"
+  type        = string
+  default     = "bootstrap-ca-secret"
+}
+
+variable "certmanager_bootstrap_ca_duration" {
+  description = "Duration (TTL) of the bootstrap CA certificate"
+  type        = string
+  default     = "87600h"
+}
+
+variable "certmanager_bootstrap_ca_issuer_name" {
+  description = "Name of the bootstrap CA ClusterIssuer"
+  type        = string
+  default     = "bootstrap-ca-issuer"
+}
+
+# VAULT CLUSTERISSUER VARIABLES
+variable "certmanager_vault_issuer_enabled" {
+  description = "Create a Vault-backed ClusterIssuer in cert-manager"
+  type        = bool
+  default     = false
+}
+
+variable "certmanager_vault_issuer_name" {
+  description = "Name of the Vault-backed ClusterIssuer"
+  type        = string
+  default     = "vault-pki"
+}
+
+variable "certmanager_vault_issuer_namespace" {
+  description = "Namespace for the Vault token secret (must match cert-manager controller namespace)"
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "certmanager_vault_issuer_pki_role" {
+  description = "PKI role name cert-manager uses to issue certificates via Vault"
+  type        = string
+  default     = ""
+}
+
+variable "certmanager_vault_token_ttl" {
+  description = "TTL for the Vault token used by cert-manager"
+  type        = string
+  default     = "720h"
+}
+
+variable "certmanager_vault_token_secret_name" {
+  description = "Name of the Kubernetes secret storing the Vault token for cert-manager"
+  type        = string
+  default     = "vault-pki-token"
+}
+
 # Whether Helm should wait for resources to become ready
 variable "vso_wait" {
   description = "Whether to wait for resources to be ready before marking the Helm release as successful."

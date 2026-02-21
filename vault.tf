@@ -1,3 +1,12 @@
+// AUTO-WIRE VAULT INGRESS ISSUER FROM BOOTSTRAP CA
+locals {
+  vault_ingress_issuer_name = (
+    var.certmanager_bootstrap_enabled && var.vault_ingress_issuer_name == ""
+    ? var.certmanager_bootstrap_ca_issuer_name
+    : var.vault_ingress_issuer_name
+  )
+}
+
 // VALIDATE VAULT INGRESS CONFIGURATION
 resource "null_resource" "validate_vault_ingress" {
   count = var.vault_enabled && var.vault_ingress_enabled ? 1 : 0
@@ -8,8 +17,8 @@ resource "null_resource" "validate_vault_ingress" {
       error_message = "vault_ingress_hostname must be set when vault_ingress_enabled is true."
     }
     precondition {
-      condition     = var.vault_ingress_issuer_name != ""
-      error_message = "vault_ingress_issuer_name must be set when vault_ingress_enabled is true."
+      condition     = local.vault_ingress_issuer_name != ""
+      error_message = "vault_ingress_issuer_name must be set when vault_ingress_enabled is true (or enable certmanager_bootstrap_enabled to auto-wire)."
     }
   }
 }
@@ -49,7 +58,7 @@ resource "helm_release" "vault" {
               (var.vault_ingress_issuer_kind == "ClusterIssuer"
                 ? "cert-manager.io/cluster-issuer"
                 : "cert-manager.io/issuer"
-              ) = var.vault_ingress_issuer_name
+              ) = local.vault_ingress_issuer_name
             }
           }
         } : {}
@@ -79,7 +88,10 @@ resource "helm_release" "vault" {
     }
   ))]
 
-  depends_on = [null_resource.validate_vault_ingress]
+  depends_on = [
+    null_resource.validate_vault_ingress,
+    kubectl_manifest.bootstrap_ca_clusterissuer,
+  ]
 }
 
 // DEPLOY VAULT AUTO-UNSEAL
