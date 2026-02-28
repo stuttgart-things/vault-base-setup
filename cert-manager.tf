@@ -16,10 +16,6 @@ resource "null_resource" "validate_certmanager_vault_issuer" {
 
   lifecycle {
     precondition {
-      condition     = var.pki_enabled
-      error_message = "pki_enabled must be true when certmanager_vault_issuer_enabled is true."
-    }
-    precondition {
       condition     = var.certmanager_vault_issuer_pki_role != ""
       error_message = "certmanager_vault_issuer_pki_role must be set when certmanager_vault_issuer_enabled is true."
     }
@@ -150,8 +146,12 @@ locals {
 
 // VAULT TOKEN FOR CERT-MANAGER
 resource "vault_token" "certmanager" {
-  count     = var.certmanager_vault_issuer_enabled ? 1 : 0
-  policies  = [var.pki_policy_name]
+  count = var.certmanager_vault_issuer_enabled ? 1 : 0
+  policies = [
+    var.certmanager_vault_issuer_policy_name != ""
+    ? var.certmanager_vault_issuer_policy_name
+    : var.pki_policy_name
+  ]
   ttl       = var.certmanager_vault_token_ttl
   no_parent = true
   renewable = true

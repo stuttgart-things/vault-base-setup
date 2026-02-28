@@ -556,6 +556,12 @@ variable "certmanager_vault_issuer_ca_bundle" {
   default     = ""
 }
 
+variable "certmanager_vault_issuer_policy_name" {
+  description = "Vault policy name for the cert-manager token. If empty, defaults to var.pki_policy_name. Use this for cross-cluster setups where the policy already exists on the remote Vault."
+  type        = string
+  default     = ""
+}
+
 # Whether Helm should wait for resources to become ready
 variable "vso_wait" {
   description = "Whether to wait for resources to be ready before marking the Helm release as successful."
