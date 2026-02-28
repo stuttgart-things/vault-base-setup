@@ -286,6 +286,40 @@ tls: failed to verify certificate: x509: certificate signed by unknown authority
 
 The `caBundle` is missing or does not contain the correct CA. See [Step 4](#step-4-retrieve-the-vault-ingress-ca-certificate).
 
+### ClusterIssuer shows `crypto/rsa: verification error`
+
+```text
+tls: failed to verify certificate: x509: certificate signed by unknown authority
+(possibly because of "crypto/rsa: verification error" while trying to verify
+candidate authority certificate "...")
+```
+
+The `caBundle` contains a **corrupted** CA certificate. The base64 string may have been mangled during copy-paste — even a single character difference will cause this. The corrupted cert can still parse and self-verify, making this hard to spot.
+
+**To diagnose**, verify the caBundle CA against the actual leaf certificate served by Vault:
+
+```bash
+# Extract caBundle from ClusterIssuer
+kubectl get clusterissuer vault-pki -o jsonpath='{.spec.vault.caBundle}' \
+  | base64 -d > /tmp/issuer-ca.pem
+
+# Get leaf cert from Vault ingress
+echo | openssl s_client -connect vault.example.com:443 \
+  -servername vault.example.com 2>/dev/null \
+  | openssl x509 > /tmp/leaf.pem
+
+# Verify — must print "OK"
+openssl verify -CAfile /tmp/issuer-ca.pem /tmp/leaf.pem
+```
+
+If verification fails with `certificate signature failure` or `RSA_padding_check` errors, regenerate the caBundle from the correct CA:
+
+```bash
+# From Vault PKI API
+curl -sk --header "X-Vault-Token: $VAULT_TOKEN" \
+  $VAULT_ADDR/v1/pki/ca/pem | base64 -w0
+```
+
 ### ClusterIssuer rejected with "cert bundle didn't contain any valid certificates"
 
 You are providing the leaf/server certificate instead of the issuing CA certificate. Extract the CA cert from the Vault cluster's TLS secret (`ca.crt` key) rather than from the live TLS connection's first certificate.
