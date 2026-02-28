@@ -126,6 +126,28 @@ data "kubernetes_secret" "bootstrap_ca" {
   depends_on = [kubectl_manifest.bootstrap_ca_certificate]
 }
 
+locals {
+  certmanager_vault_issuer_effective_server = (
+    var.certmanager_vault_issuer_server != ""
+    ? var.certmanager_vault_issuer_server
+    : var.vault_addr
+  )
+
+  certmanager_vault_issuer_effective_ca_bundle = (
+    var.certmanager_vault_issuer_ca_bundle != ""
+    ? var.certmanager_vault_issuer_ca_bundle
+    : (
+      var.certmanager_bootstrap_enabled && var.certmanager_vault_issuer_enabled
+      ? (
+        data.kubernetes_secret.bootstrap_ca[0].data["ca.crt"] != null
+        ? base64encode(data.kubernetes_secret.bootstrap_ca[0].data["ca.crt"])
+        : null
+      )
+      : null
+    )
+  )
+}
+
 // VAULT TOKEN FOR CERT-MANAGER
 resource "vault_token" "certmanager" {
   count     = var.certmanager_vault_issuer_enabled ? 1 : 0
@@ -137,8 +159,19 @@ resource "vault_token" "certmanager" {
   depends_on = [vault_policy.pki]
 }
 
+// ORDERING BRIDGE: ENSURES CERT-MANAGER IS READY BEFORE CREATING SECRET
+resource "null_resource" "certmanager_ready" {
+  count      = var.certmanager_enabled && var.certmanager_vault_issuer_enabled ? 1 : 0
+  depends_on = [helm_release.cert_manager]
+}
+
+moved {
+  from = kubernetes_secret.certmanager_vault_token
+  to   = kubernetes_secret_v1.certmanager_vault_token
+}
+
 // KUBERNETES SECRET FOR VAULT TOKEN
-resource "kubernetes_secret" "certmanager_vault_token" {
+resource "kubernetes_secret_v1" "certmanager_vault_token" {
   count = var.certmanager_vault_issuer_enabled ? 1 : 0
 
   metadata {
@@ -150,7 +183,7 @@ resource "kubernetes_secret" "certmanager_vault_token" {
     token = vault_token.certmanager[0].client_token
   }
 
-  depends_on = [helm_release.cert_manager]
+  depends_on = [null_resource.certmanager_ready]
 }
 
 // VAULT-BACKED CLUSTERISSUER
@@ -164,26 +197,26 @@ resource "kubectl_manifest" "vault_clusterissuer" {
       name = var.certmanager_vault_issuer_name
     }
     spec = {
-      vault = {
-        path   = "${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}"
-        server = var.vault_addr
-        caBundle = var.certmanager_bootstrap_enabled ? (
-          data.kubernetes_secret.bootstrap_ca[0].data["ca.crt"] != null
-          ? base64encode(data.kubernetes_secret.bootstrap_ca[0].data["ca.crt"])
-          : null
-        ) : null
-        auth = {
-          tokenSecretRef = {
-            name = var.certmanager_vault_token_secret_name
-            key  = "token"
+      vault = merge(
+        {
+          path   = "${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}"
+          server = local.certmanager_vault_issuer_effective_server
+          auth = {
+            tokenSecretRef = {
+              name = var.certmanager_vault_token_secret_name
+              key  = "token"
+            }
           }
-        }
-      }
+        },
+        local.certmanager_vault_issuer_effective_ca_bundle != null ? {
+          caBundle = local.certmanager_vault_issuer_effective_ca_bundle
+        } : {}
+      )
     }
   })
 
   depends_on = [
-    kubernetes_secret.certmanager_vault_token,
+    kubernetes_secret_v1.certmanager_vault_token,
     null_resource.validate_certmanager_vault_issuer,
   ]
 }

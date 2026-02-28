@@ -544,6 +544,18 @@ variable "certmanager_vault_token_secret_name" {
   default     = "vault-pki-token"
 }
 
+variable "certmanager_vault_issuer_server" {
+  description = "Vault server URL for the ClusterIssuer. If empty, defaults to var.vault_addr."
+  type        = string
+  default     = ""
+}
+
+variable "certmanager_vault_issuer_ca_bundle" {
+  description = "Base64-encoded CA bundle for the Vault ClusterIssuer. If empty, falls back to bootstrap CA (when available), then null."
+  type        = string
+  default     = ""
+}
+
 # Whether Helm should wait for resources to become ready
 variable "vso_wait" {
   description = "Whether to wait for resources to be ready before marking the Helm release as successful."
