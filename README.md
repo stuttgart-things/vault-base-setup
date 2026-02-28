@@ -540,6 +540,90 @@ terraform apply
 
 </details>
 
+<details><summary><b>VAULT CLUSTERISSUER (FLUX-MANAGED CERT-MANAGER / CROSS-CLUSTER)</b></summary>
+
+Use the Vault ClusterIssuer without deploying cert-manager or the PKI engine through this module. This is useful when:
+
+- cert-manager is managed by Flux (or another GitOps tool)
+- The PKI engine already exists on a remote Vault instance
+- You want to issue certificates on an edge cluster from a central Vault
+
+### Same-cluster with Flux-managed cert-manager
+
+When Vault runs in the same cluster and cert-manager is deployed externally (e.g. via Flux), use the internal cluster URL to avoid TLS/caBundle requirements:
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.example.com"
+  skip_tls_verify = true
+  kubeconfig_path = "/path/to/kubeconfig"
+  cluster_name    = "my-cluster"
+
+  csi_enabled = false
+  vso_enabled = false
+
+  pki_enabled      = true
+  pki_path         = "pki"
+  pki_common_name  = "example.com"
+  pki_organization = "My Org"
+  pki_roles = [
+    {
+      name             = "example-dot-com"
+      allowed_domains  = ["example.com"]
+      allow_subdomains = true
+      max_ttl          = "720h"
+    }
+  ]
+
+  certmanager_vault_issuer_enabled  = true
+  certmanager_vault_issuer_pki_role = "example-dot-com"
+  certmanager_vault_issuer_server   = "http://vault-server.vault.svc.cluster.local:8200"
+}
+```
+
+### Cross-cluster (edge cluster → remote Vault)
+
+When the PKI engine already exists on a remote Vault, set `pki_enabled = false` and provide the policy name and CA bundle explicitly:
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.k3s-infra.example.com"
+  skip_tls_verify = true
+  kubeconfig_path = "/path/to/edge-kubeconfig"
+  cluster_name    = "edge-cluster"
+
+  csi_enabled = false
+  vso_enabled = false
+  pki_enabled = false
+
+  certmanager_vault_issuer_enabled     = true
+  certmanager_vault_issuer_pki_role    = "k3s-infra"
+  certmanager_vault_issuer_server      = "https://vault.k3s-infra.example.com"
+  certmanager_vault_issuer_ca_bundle   = var.vault_ca_bundle
+  certmanager_vault_issuer_policy_name = "pki-issue"
+}
+```
+
+The `vault_ca_bundle` variable should contain the base64-encoded PEM of the CA that signed the Vault ingress TLS certificate.
+
+### Variables Reference
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `certmanager_vault_issuer_enabled` | bool | `false` | Create Vault-backed ClusterIssuer |
+| `certmanager_vault_issuer_name` | string | `"vault-pki"` | ClusterIssuer name |
+| `certmanager_vault_issuer_pki_role` | string | `""` | PKI role for certificate issuance |
+| `certmanager_vault_issuer_server` | string | `""` | Vault URL (defaults to `vault_addr`) |
+| `certmanager_vault_issuer_ca_bundle` | string | `""` | Base64-encoded CA bundle (falls back to bootstrap CA, then omitted) |
+| `certmanager_vault_issuer_policy_name` | string | `""` | Vault policy name (defaults to `pki_policy_name`) |
+| `certmanager_vault_issuer_namespace` | string | `"cert-manager"` | Namespace for the token secret |
+| `certmanager_vault_token_ttl` | string | `"720h"` | Vault token TTL |
+| `certmanager_vault_token_secret_name` | string | `"vault-pki-token"` | K8s secret name for the token |
+
+</details>
+
 <details><summary><b>CSI PROVIDER EXAMPLE APPLICATION</b></summary>
 
 ### SecretProviderClass

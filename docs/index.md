@@ -17,6 +17,7 @@ Terraform module for base-setup configuration of HashiCorp Vault.
 | Vault Auto-Unseal | `vault_autounseal_enabled` | Automatically initialize and unseal Vault using vault-autounseal |
 | **PKI CA** | `pki_enabled` | Mount PKI secrets engine with root CA for cert-manager integration |
 | **PKI CA Bootstrap** | `certmanager_bootstrap_enabled` | Self-signed CA bootstrap chain for Vault ingress TLS with automated Vault ClusterIssuer |
+| **Vault ClusterIssuer** | `certmanager_vault_issuer_enabled` | Vault-backed ClusterIssuer for cert-manager — works with external cert-manager (Flux), same-cluster or cross-cluster |
 
 ## Requirements
 

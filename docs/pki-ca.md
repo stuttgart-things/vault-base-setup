@@ -230,6 +230,52 @@ kubectl get secret my-app-tls -o jsonpath='{.data.tls\.crt}' \
 # notAfter=...
 ```
 
+## Cross-Cluster: Issuing Certificates from a Remote Vault
+
+When the PKI engine already exists on a central Vault instance, edge clusters can create a Vault-backed ClusterIssuer without recreating the PKI engine locally. Set `pki_enabled = false` and provide the policy name and CA bundle explicitly.
+
+### Module Call (Edge Cluster)
+
+```hcl
+module "vault-base-setup" {
+  source          = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr      = "https://vault.k3s-infra.sthings-vsphere.labul.sva.de"
+  skip_tls_verify = true
+  kubeconfig_path = "/path/to/edge-kubeconfig"
+  cluster_name    = "edge-cluster"
+
+  csi_enabled = false
+  vso_enabled = false
+  pki_enabled = false
+
+  certmanager_vault_issuer_enabled     = true
+  certmanager_vault_issuer_pki_role    = "k3s-infra"
+  certmanager_vault_issuer_server      = "https://vault.k3s-infra.sthings-vsphere.labul.sva.de"
+  certmanager_vault_issuer_ca_bundle   = var.vault_ca_bundle
+  certmanager_vault_issuer_policy_name = "pki-issue"
+}
+```
+
+### What This Creates
+
+| Resource | Description |
+|----------|-------------|
+| `vault_token.certmanager` | Token scoped to the existing `pki-issue` policy on the remote Vault |
+| `kubernetes_secret_v1.certmanager_vault_token` | K8s secret in the cert-manager namespace on the edge cluster |
+| `kubectl_manifest.vault_clusterissuer` | ClusterIssuer pointing to the remote Vault with `caBundle` |
+
+### Retrieving the CA Bundle
+
+The `vault_ca_bundle` must contain the base64-encoded PEM of the CA that signed the remote Vault's ingress TLS certificate. See [Step 4: Retrieve the Vault Ingress CA Certificate](#step-4-retrieve-the-vault-ingress-ca-certificate) above.
+
+### Verify
+
+```bash
+kubectl get clusterissuer vault-pki
+# NAME        READY   AGE
+# vault-pki   True    10s
+```
+
 ## Troubleshooting
 
 ### ClusterIssuer shows `VaultError` with TLS failure

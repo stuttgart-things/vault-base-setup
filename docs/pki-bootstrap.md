@@ -86,6 +86,9 @@ This is required because the Vault provider needs a running, unsealed Vault to c
 | `certmanager_vault_issuer_name` | string | `"vault-pki"` | Vault ClusterIssuer name |
 | `certmanager_vault_issuer_namespace` | string | `"cert-manager"` | Namespace for Vault token secret |
 | `certmanager_vault_issuer_pki_role` | string | `""` | PKI role for certificate issuance |
+| `certmanager_vault_issuer_server` | string | `""` | Vault URL for ClusterIssuer (defaults to `vault_addr`) |
+| `certmanager_vault_issuer_ca_bundle` | string | `""` | Base64-encoded CA bundle (falls back to bootstrap CA, then omitted) |
+| `certmanager_vault_issuer_policy_name` | string | `""` | Vault policy name (defaults to `pki_policy_name`) |
 | `certmanager_vault_token_ttl` | string | `"720h"` | Vault token TTL |
 | `certmanager_vault_token_secret_name` | string | `"vault-pki-token"` | K8s secret name for Vault token |
 
