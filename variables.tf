@@ -304,6 +304,18 @@ variable "vault_atomic" {
   default     = false
 }
 
+variable "vault_dev_mode" {
+  description = "Run Vault in dev mode (auto-initialized, auto-unsealed, in-memory storage)"
+  type        = bool
+  default     = false
+}
+
+variable "vault_dev_root_token" {
+  description = "Root token ID for Vault dev mode"
+  type        = string
+  default     = "root"
+}
+
 variable "vault_autounseal_enabled" {
   description = "Enable vault-autounseal deployment for automatic init and unseal"
   type        = bool

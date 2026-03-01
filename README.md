@@ -392,6 +392,33 @@ spec:
 
 </details>
 
+<details><summary><b>DEPLOY VAULT SERVER IN DEV MODE</b></summary>
+
+Deploys a Vault server in dev mode — automatically initialized and unsealed with in-memory storage. No auto-unseal operator needed. Useful for development and testing.
+
+> **Note:** Dev mode uses in-memory storage — all data is lost on pod restart. Do not use in production.
+
+```hcl
+module "vault-base-setup" {
+  source                 = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr             = "https://vault.example.com"
+  cluster_name           = "my-cluster"
+  context                = "default"
+  skip_tls_verify        = true
+  kubeconfig_path        = "/home/sthings/.kube/my-cluster"
+  vault_enabled          = true
+  vault_dev_mode         = true
+  vault_dev_root_token   = "root"
+  vault_injector_enabled = false
+  namespace_vault        = "vault"
+  vault_storage_class    = "openebs-hostpath"
+  csi_enabled            = false
+  vso_enabled            = false
+}
+```
+
+</details>
+
 <details><summary><b>DEPLOY VAULT SERVER (BITNAMI)</b></summary>
 
 Deploys a Vault server using the Bitnami Helm chart. When `vault_autounseal_enabled` is set to `true`, the [vault-autounseal](https://github.com/pytoshka/vault-autounseal) chart is deployed alongside Vault to automatically initialize and unseal the server. Unseal keys and root token are stored as Kubernetes secrets (`vault-keys` and `vault-root-token`) in the Vault namespace.

@@ -18,6 +18,8 @@ Deploy a Vault server using the Bitnami Helm chart with optional auto-unseal, in
 | `vault_injector_enabled` | bool | `false` | Enable Vault injector |
 | `vault_storage_class` | string | `""` | Storage class for persistent volumes (empty = cluster default) |
 | `vault_volume_permissions` | bool | `true` | Enable init container to fix volume permissions |
+| `vault_dev_mode` | bool | `false` | Run Vault in dev mode (auto-initialized, auto-unsealed, in-memory storage) |
+| `vault_dev_root_token` | string | `"root"` | Root token ID for Vault dev mode |
 | `vault_wait` | bool | `false` | Whether to wait for Vault pods to be ready (set to false when using auto-unseal) |
 | `vault_atomic` | bool | `false` | Whether to rollback Vault Helm release on failure |
 | `vault_injector_image_registry` | string | `"ghcr.io"` | Injector image registry |
@@ -56,7 +58,32 @@ Deploy a Vault server using the Bitnami Helm chart with optional auto-unseal, in
 | `vault_gateway_namespace` | string | `"default"` | Namespace of the Gateway resource |
 | `vault_gateway_section` | string | `"https"` | Gateway listener section name |
 
-## Basic Deployment
+## Dev Mode Deployment
+
+When `vault_dev_mode` is `true`, Vault starts automatically initialized and unsealed using in-memory storage. This is useful for development and testing — no auto-unseal operator is needed. The auto-unseal chart is automatically skipped when dev mode is enabled.
+
+> **Note:** Dev mode uses in-memory storage — all data is lost on pod restart. Do not use in production.
+
+```hcl
+module "vault-base-setup" {
+  source                 = "github.com/stuttgart-things/vault-base-setup"
+  vault_addr             = "https://vault.example.com"
+  cluster_name           = "my-cluster"
+  context                = "default"
+  skip_tls_verify        = true
+  kubeconfig_path        = "/home/sthings/.kube/my-cluster"
+  vault_enabled          = true
+  vault_dev_mode         = true
+  vault_dev_root_token   = "root"
+  vault_injector_enabled = false
+  namespace_vault        = "vault"
+  vault_storage_class    = "openebs-hostpath"
+  csi_enabled            = false
+  vso_enabled            = false
+}
+```
+
+## Basic Deployment (with Auto-Unseal)
 
 When `vault_autounseal_enabled` is `true`, the [vault-autounseal](https://github.com/pytoshka/vault-autounseal) chart is deployed alongside Vault. It watches for the Vault pod (`app.kubernetes.io/component=server`) and automatically initializes and unseals it. Unseal keys and the root token are stored as Kubernetes secrets in the Vault namespace:
 

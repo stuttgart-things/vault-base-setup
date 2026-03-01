@@ -48,6 +48,14 @@ resource "helm_release" "vault" {
             storageClass = var.vault_storage_class
           }
         },
+        var.vault_dev_mode ? {
+          args = [
+            "server",
+            "-dev",
+            "-dev-listen-address=0.0.0.0:8200",
+            "-dev-root-token-id=${var.vault_dev_root_token}"
+          ]
+        } : {},
         var.vault_ingress_enabled ? {
           ingress = {
             enabled          = true
@@ -96,7 +104,7 @@ resource "helm_release" "vault" {
 
 // DEPLOY VAULT AUTO-UNSEAL
 resource "helm_release" "vault_autounseal" {
-  count            = var.vault_enabled && var.vault_autounseal_enabled ? 1 : 0
+  count            = var.vault_enabled && var.vault_autounseal_enabled && !var.vault_dev_mode ? 1 : 0
   name             = "vault-autounseal"
   namespace        = var.namespace_vault
   create_namespace = true
