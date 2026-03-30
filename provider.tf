@@ -45,8 +45,9 @@ provider "kubernetes" {
 }
 
 provider "kubectl" {
-  config_context = var.kubeconfig_content == null ? var.context : null
-  config_path    = var.kubeconfig_path
+  config_context   = var.kubeconfig_content == null ? var.context : null
+  config_path      = var.kubeconfig_path
+  load_config_file = var.kubeconfig_content == null
 
   host                   = var.kubeconfig_content != null ? local.kubeconfig.clusters[0].cluster.server : null
   cluster_ca_certificate = var.kubeconfig_content != null ? base64decode(local.kubeconfig.clusters[0].cluster["certificate-authority-data"]) : null
