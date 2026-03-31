@@ -186,33 +186,61 @@ resource "kubernetes_secret_v1" "certmanager_vault_token" {
   depends_on = [null_resource.certmanager_ready]
 }
 
+// VAULT CA BUNDLE SECRET
+// Stores the CA PEM in a Secret so the ClusterIssuer can reference it
+// via caBundleSecretRef, avoiding encoding issues with inline caBundle.
+resource "kubernetes_secret_v1" "vault_ca_bundle" {
+  count = var.certmanager_vault_issuer_enabled && local.certmanager_vault_issuer_effective_ca_bundle != null ? 1 : 0
+
+  metadata {
+    name      = "${var.certmanager_vault_issuer_name}-ca"
+    namespace = var.certmanager_vault_issuer_namespace
+  }
+
+  data = {
+    "ca.crt" = base64decode(local.certmanager_vault_issuer_effective_ca_bundle)
+  }
+
+  depends_on = [null_resource.certmanager_ready]
+}
+
 // VAULT-BACKED CLUSTERISSUER
-// Uses heredoc instead of yamlencode() because yamlencode() quotes the
-// caBundle base64 string, causing cert-manager's webhook to reject it
-// as "cert bundle didn't contain any valid certificates".
+// Uses caBundleSecretRef instead of inline caBundle to avoid encoding
+// issues with kubectl_manifest and cert-manager webhook validation.
 resource "kubectl_manifest" "vault_clusterissuer" {
   count = var.certmanager_vault_issuer_enabled ? 1 : 0
 
-  yaml_body = <<-EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: ${var.certmanager_vault_issuer_name}
-spec:
-  vault:
-    path: ${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}
-    server: ${local.certmanager_vault_issuer_effective_server}
-    auth:
-      tokenSecretRef:
-        name: ${var.certmanager_vault_token_secret_name}
-        key: token
-%{if local.certmanager_vault_issuer_effective_ca_bundle != null~}
-    caBundle: ${local.certmanager_vault_issuer_effective_ca_bundle}
-%{endif~}
-EOF
+  yaml_body = yamlencode({
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = var.certmanager_vault_issuer_name
+    }
+    spec = {
+      vault = merge(
+        {
+          path   = "${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}"
+          server = local.certmanager_vault_issuer_effective_server
+          auth = {
+            tokenSecretRef = {
+              name = var.certmanager_vault_token_secret_name
+              key  = "token"
+            }
+          }
+        },
+        local.certmanager_vault_issuer_effective_ca_bundle != null ? {
+          caBundleSecretRef = {
+            name = "${var.certmanager_vault_issuer_name}-ca"
+            key  = "ca.crt"
+          }
+        } : {}
+      )
+    }
+  })
 
   depends_on = [
     kubernetes_secret_v1.certmanager_vault_token,
+    kubernetes_secret_v1.vault_ca_bundle,
     null_resource.validate_certmanager_vault_issuer,
   ]
 }
