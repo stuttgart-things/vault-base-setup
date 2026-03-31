@@ -193,23 +193,23 @@ resource "kubernetes_secret_v1" "certmanager_vault_token" {
 resource "kubectl_manifest" "vault_clusterissuer" {
   count = var.certmanager_vault_issuer_enabled ? 1 : 0
 
-  yaml_body = <<-YAML
-    apiVersion: cert-manager.io/v1
-    kind: ClusterIssuer
-    metadata:
-      name: ${var.certmanager_vault_issuer_name}
-    spec:
-      vault:
-        path: ${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}
-        server: ${local.certmanager_vault_issuer_effective_server}
-        auth:
-          tokenSecretRef:
-            name: ${var.certmanager_vault_token_secret_name}
-            key: token
-        %{if local.certmanager_vault_issuer_effective_ca_bundle != null~}
-        caBundle: ${local.certmanager_vault_issuer_effective_ca_bundle}
-        %{endif~}
-  YAML
+  yaml_body = <<-EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ${var.certmanager_vault_issuer_name}
+spec:
+  vault:
+    path: ${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}
+    server: ${local.certmanager_vault_issuer_effective_server}
+    auth:
+      tokenSecretRef:
+        name: ${var.certmanager_vault_token_secret_name}
+        key: token
+%{if local.certmanager_vault_issuer_effective_ca_bundle != null~}
+    caBundle: ${local.certmanager_vault_issuer_effective_ca_bundle}
+%{endif~}
+EOF
 
   depends_on = [
     kubernetes_secret_v1.certmanager_vault_token,
