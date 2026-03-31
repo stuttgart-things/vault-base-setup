@@ -187,33 +187,29 @@ resource "kubernetes_secret_v1" "certmanager_vault_token" {
 }
 
 // VAULT-BACKED CLUSTERISSUER
+// Uses heredoc instead of yamlencode() because yamlencode() quotes the
+// caBundle base64 string, causing cert-manager's webhook to reject it
+// as "cert bundle didn't contain any valid certificates".
 resource "kubectl_manifest" "vault_clusterissuer" {
   count = var.certmanager_vault_issuer_enabled ? 1 : 0
 
-  yaml_body = yamlencode({
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = var.certmanager_vault_issuer_name
-    }
-    spec = {
-      vault = merge(
-        {
-          path   = "${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}"
-          server = local.certmanager_vault_issuer_effective_server
-          auth = {
-            tokenSecretRef = {
-              name = var.certmanager_vault_token_secret_name
-              key  = "token"
-            }
-          }
-        },
-        local.certmanager_vault_issuer_effective_ca_bundle != null ? {
-          caBundle = local.certmanager_vault_issuer_effective_ca_bundle
-        } : {}
-      )
-    }
-  })
+  yaml_body = <<-YAML
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: ${var.certmanager_vault_issuer_name}
+    spec:
+      vault:
+        path: ${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}
+        server: ${local.certmanager_vault_issuer_effective_server}
+        auth:
+          tokenSecretRef:
+            name: ${var.certmanager_vault_token_secret_name}
+            key: token
+        %{if local.certmanager_vault_issuer_effective_ca_bundle != null~}
+        caBundle: ${local.certmanager_vault_issuer_effective_ca_bundle}
+        %{endif~}
+  YAML
 
   depends_on = [
     kubernetes_secret_v1.certmanager_vault_token,
