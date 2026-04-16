@@ -35,3 +35,7 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Dagger generated artifacts
+dagger/.dagger/
+dagger/go.sum
