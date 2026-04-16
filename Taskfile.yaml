@@ -80,6 +80,24 @@ tasks:
       - gh pr merge $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --auto --rebase --delete-branch
       - git checkout main && git pull
 
+  dagger:test-dev:
+    desc: Run terraform apply against an ephemeral Vault dev-mode container via Dagger
+    dir: dagger
+    cmds:
+      - dagger call test-terraform-apply-dev
+
+  dagger:test-tls:
+    desc: Run terraform apply against an ephemeral TLS-enabled Vault (init + unseal) via Dagger
+    dir: dagger
+    cmds:
+      - dagger call test-terraform-apply-tls
+
+  dagger:test:
+    desc: Run both Dagger terraform-apply tests
+    deps:
+      - dagger:test-dev
+      - dagger:test-tls
+
   run-pre-commit-hook:
     deps:
       - check
