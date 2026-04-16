@@ -25,9 +25,9 @@ import (
 )
 
 const (
-	defaultTerraformImage = "hashicorp/terraform:1.10"
-	defaultVaultImage     = "hashicorp/vault:1.18"
-	defaultAlpineImage    = "alpine:3.20"
+	defaultTerraformImage = "hashicorp/terraform:1.14"
+	defaultVaultImage     = "hashicorp/vault:1.21"
+	defaultAlpineImage    = "alpine:3.23"
 	devRootToken          = "dagger-root-token"
 	vaultHostname         = "vault"
 	vaultPort             = 8200
@@ -56,7 +56,7 @@ func New(
 // storage and listens on plain HTTP at :8200 with a fixed root token.
 func (m *VaultBaseSetup) VaultDevService(
 	// +optional
-	// +default="hashicorp/vault:1.18"
+	// +default="hashicorp/vault:1.21"
 	image string,
 	// +optional
 	// +default="dagger-root-token"
@@ -86,10 +86,10 @@ func (m *VaultBaseSetup) VaultDevService(
 func (m *VaultBaseSetup) TestTerraformApplyDev(
 	ctx context.Context,
 	// +optional
-	// +default="hashicorp/terraform:1.10"
+	// +default="hashicorp/terraform:1.14"
 	terraformImage string,
 	// +optional
-	// +default="hashicorp/vault:1.18"
+	// +default="hashicorp/vault:1.21"
 	vaultImage string,
 ) (string, error) {
 	if terraformImage == "" {
@@ -127,10 +127,10 @@ func (m *VaultBaseSetup) TestTerraformApplyDev(
 func (m *VaultBaseSetup) TestTerraformApplyTls(
 	ctx context.Context,
 	// +optional
-	// +default="hashicorp/terraform:1.10"
+	// +default="hashicorp/terraform:1.14"
 	terraformImage string,
 	// +optional
-	// +default="hashicorp/vault:1.18"
+	// +default="hashicorp/vault:1.21"
 	vaultImage string,
 ) (string, error) {
 	if terraformImage == "" {
