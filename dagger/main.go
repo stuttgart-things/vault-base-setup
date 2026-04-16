@@ -74,7 +74,7 @@ func (m *VaultBaseSetup) VaultDevService(
 		WithExposedPort(vaultPort).
 		AsService(dagger.ContainerAsServiceOpts{
 			Args: []string{
-				"server", "-dev",
+				"vault", "server", "-dev",
 				fmt.Sprintf("-dev-listen-address=0.0.0.0:%d", vaultPort),
 				"-dev-root-token-id=" + rootToken,
 			},
@@ -252,7 +252,7 @@ cluster_addr = "https://vault:8201"
 		WithUser("vault").
 		WithExposedPort(vaultPort).
 		AsService(dagger.ContainerAsServiceOpts{
-			Args: []string{"server", "-config=/vault/config/config.hcl"},
+			Args: []string{"vault", "server", "-config=/vault/config/config.hcl"},
 		})
 }
 
