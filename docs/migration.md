@@ -114,24 +114,51 @@ Deleting it invalidates its long-lived token Secret, which is the `token_reviewe
 `vault_kubernetes_auth_backend_config` — Vault Kubernetes auth stops working until a
 subsequent apply repairs it.
 
-For every entry in `k8s_auths`:
+> **Do not use the `terraform import` CLI command here — it fails against this module.**
+> `auth.tf` derives `for_each` keys from resource attributes:
+>
+> ```hcl
+> resource "vault_approle_auth_backend_role_secret_id" "approle_secret" {
+>   for_each = {
+>     for role in vault_approle_auth_backend_role.approle :
+>     role.role_name => role
+>   }
+> ```
+>
+> The import code path rejects that as *"keys derived from resource attributes that cannot
+> be determined until apply"* — even when `approle_roles` is empty and the map is provably
+> empty. `terraform plan` handles it fine, so use a config `import` block instead, which
+> goes through a normal plan.
+
+For every entry in `k8s_auths`, first drop the old address:
 
 ```bash
 terraform state rm 'kubernetes_manifest.service_account["<name>"]'
-terraform import 'kubernetes_service_account_v1.vault["<name>"]' '<namespace>/<name>'
-```
-
-Concretely, for `{ name = "certmanager-vault", namespace = "cert-manager", ... }`:
-
-```bash
-terraform state rm 'kubernetes_manifest.service_account["certmanager-vault"]'
-terraform import \
-  'kubernetes_service_account_v1.vault["certmanager-vault"]' \
-  'cert-manager/certmanager-vault'
 ```
 
 `terraform state rm` only forgets the resource; it does not touch the cluster. The
 ServiceAccount keeps running throughout.
+
+Then add a temporary `import` block to your configuration:
+
+```hcl
+import {
+  to = module.vault-base-setup.kubernetes_service_account_v1.vault["<name>"]
+  id = "<namespace>/<name>"
+}
+```
+
+Concretely, for `{ name = "certmanager-vault", namespace = "cert-manager", ... }`:
+
+```hcl
+import {
+  to = module.vault-base-setup.kubernetes_service_account_v1.vault["certmanager-vault"]
+  id = "cert-manager/certmanager-vault"
+}
+```
+
+Plan and apply — expect `1 to import, 0 to destroy` — then **delete the `import` block
+again**; it has served its purpose.
 
 Then verify:
 
@@ -144,6 +171,24 @@ An in-place diff on `automount_service_account_token` is harmless. A **destroy**
 ServiceAccount is not — that means the import did not land.
 
 ---
+
+### Also watch for: a `vault-pki-ca` Secret collision
+
+Callers coming from **v1.0.0** may hit this. Since v1.1.0 the ClusterIssuer references its CA
+via `caBundleSecretRef`, and the module creates that Secret itself as
+`"${certmanager_vault_issuer_name}-ca"` — by default `vault-pki-ca`. If your root module
+already declares a Secret of that name (a common pattern before v1.1.0), two Terraform
+resources now fight over one Kubernetes object and the apply dies partway with
+`AlreadyExists`.
+
+Both write the same content, so hand ownership to the module and delete your own
+declaration:
+
+```bash
+terraform state mv \
+  'kubernetes_secret_v1.<your_name>' \
+  'module.vault-base-setup.kubernetes_secret_v1.vault_ca_bundle[0]'
+```
 
 ### Not affected
 
@@ -167,6 +212,14 @@ mounts, one secret each, keyed the old way.
 - Adding further entries that share a path then works: two mounts carrying four secrets,
   all readable, which the previous keying made impossible.
 
-The ServiceAccount part (`state rm` + `import`) has **not** been rehearsed — it needs a live
-cluster rather than a disposable Vault. Treat those commands as derived from the address
-change, not as tested, and check `terraform plan` for destroys before applying.
+The ServiceAccount part was executed for real on a live cluster
+(`platform-sthings/vault-cert-issuer`, one `k8s_auths` entry):
+
+- The `terraform import` CLI command **failed** — hence the `import` block above.
+- With `state rm` + `import` block the plan was `1 to import, 0 to add, 1 to change,
+  0 to destroy`, and afterwards `No changes.`
+- The ServiceAccount kept its original `creationTimestamp` — it was never recreated — and a
+  test certificate issued through the Vault-Kubernetes-auth ClusterIssuer still succeeded,
+  confirming the imported ServiceAccount still works as the login identity.
+- The one in-place change was the ClusterIssuer switching from inline `caBundle` to
+  `caBundleSecretRef`, as expected.
