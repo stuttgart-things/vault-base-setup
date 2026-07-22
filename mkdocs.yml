@@ -7,6 +7,7 @@ nav:
   - Vault Deployment: vault-deployment.md
   - PKI CA with cert-manager: pki-ca.md
   - PKI CA Bootstrap: pki-bootstrap.md
+  - Migration notes: migration.md
 
 plugins:
   - techdocs-core
