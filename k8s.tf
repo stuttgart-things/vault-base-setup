@@ -122,12 +122,23 @@ resource "vault_kubernetes_auth_backend_role" "backend_role" {
     auth.name => auth
   }
 
-  backend                          = "${var.cluster_name}-${each.value["name"]}"
-  role_name                        = each.value["name"]
-  bound_service_account_names      = [each.value["name"]]
-  bound_service_account_namespaces = [each.value["namespace"]]
-  token_ttl                        = each.value["token_ttl"]
-  token_policies                   = each.value["token_policies"]
+  backend   = "${var.cluster_name}-${each.value["name"]}"
+  role_name = each.value["name"]
+
+  // DEFAULTS TO THE SERVICEACCOUNT THIS MODULE CREATES, BUT CAN ADMIT AN EXISTING ONE
+  bound_service_account_names = (
+    each.value["bound_service_account_names"] != null
+    ? each.value["bound_service_account_names"]
+    : [each.value["name"]]
+  )
+  bound_service_account_namespaces = (
+    each.value["bound_service_account_namespaces"] != null
+    ? each.value["bound_service_account_namespaces"]
+    : [each.value["namespace"]]
+  )
+
+  token_ttl      = each.value["token_ttl"]
+  token_policies = each.value["token_policies"]
 
   depends_on = [
     vault_kubernetes_auth_backend_config.kubernetes

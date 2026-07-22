@@ -19,6 +19,13 @@ resource "null_resource" "validate_certmanager_vault_issuer" {
       condition     = var.certmanager_vault_issuer_pki_role != ""
       error_message = "certmanager_vault_issuer_pki_role must be set when certmanager_vault_issuer_enabled is true."
     }
+    precondition {
+      condition = (
+        var.certmanager_vault_issuer_auth_method != "kubernetes"
+        || (var.certmanager_vault_issuer_k8s_auth_mount != "" && var.certmanager_vault_issuer_k8s_auth_role != "")
+      )
+      error_message = "certmanager_vault_issuer_k8s_auth_mount and certmanager_vault_issuer_k8s_auth_role must be set when certmanager_vault_issuer_auth_method is \"kubernetes\"."
+    }
   }
 }
 
@@ -144,9 +151,31 @@ locals {
   )
 }
 
+locals {
+  // STATIC TOKEN AUTH IS THE DEFAULT, BUT IT EXPIRES.
+  // The token is created once by Terraform and nothing renews it: the provider
+  // only renews during an apply, and there is no in-cluster renewer. Vault also
+  // caps token TTLs at the token mount's max_lease_ttl (768h by default), so a
+  // longer TTL is not a way out. Prefer auth_method = "kubernetes".
+  certmanager_vault_issuer_uses_token = (
+    var.certmanager_vault_issuer_enabled && var.certmanager_vault_issuer_auth_method == "token"
+  )
+
+  certmanager_vault_issuer_uses_k8s = (
+    var.certmanager_vault_issuer_enabled && var.certmanager_vault_issuer_auth_method == "kubernetes"
+  )
+
+  // SERVICE ACCOUNT CERT-MANAGER PRESENTS WHEN LOGGING IN TO VAULT
+  certmanager_vault_issuer_effective_sa = (
+    var.certmanager_vault_issuer_service_account != ""
+    ? var.certmanager_vault_issuer_service_account
+    : var.certmanager_vault_issuer_k8s_auth_role
+  )
+}
+
 // VAULT TOKEN FOR CERT-MANAGER
 resource "vault_token" "certmanager" {
-  count = var.certmanager_vault_issuer_enabled ? 1 : 0
+  count = local.certmanager_vault_issuer_uses_token ? 1 : 0
   policies = [
     var.certmanager_vault_issuer_policy_name != ""
     ? var.certmanager_vault_issuer_policy_name
@@ -172,7 +201,7 @@ moved {
 
 // KUBERNETES SECRET FOR VAULT TOKEN
 resource "kubernetes_secret_v1" "certmanager_vault_token" {
-  count = var.certmanager_vault_issuer_enabled ? 1 : 0
+  count = local.certmanager_vault_issuer_uses_token ? 1 : 0
 
   metadata {
     name      = var.certmanager_vault_token_secret_name
@@ -221,12 +250,23 @@ resource "kubectl_manifest" "vault_clusterissuer" {
         {
           path   = "${var.pki_path}/sign/${var.certmanager_vault_issuer_pki_role}"
           server = local.certmanager_vault_issuer_effective_server
-          auth = {
-            tokenSecretRef = {
-              name = var.certmanager_vault_token_secret_name
-              key  = "token"
+          auth = merge(
+            local.certmanager_vault_issuer_uses_k8s ? {
+              kubernetes = {
+                mountPath = "/v1/auth/${var.certmanager_vault_issuer_k8s_auth_mount}"
+                role      = var.certmanager_vault_issuer_k8s_auth_role
+                serviceAccountRef = {
+                  name = local.certmanager_vault_issuer_effective_sa
+                }
+              }
+            } : {},
+            local.certmanager_vault_issuer_uses_k8s ? {} : {
+              tokenSecretRef = {
+                name = var.certmanager_vault_token_secret_name
+                key  = "token"
+              }
             }
-          }
+          )
         },
         local.certmanager_vault_issuer_effective_ca_bundle != null ? {
           caBundleSecretRef = {
@@ -243,4 +283,47 @@ resource "kubectl_manifest" "vault_clusterissuer" {
     kubernetes_secret_v1.vault_ca_bundle,
     null_resource.validate_certmanager_vault_issuer,
   ]
+}
+
+// ALLOW THE CERT-MANAGER CONTROLLER TO MINT TOKENS FOR THE LOGIN SERVICE ACCOUNT.
+// With serviceAccountRef, cert-manager requests a short-lived token via the
+// TokenRequest API. The chart ships a "cert-manager-tokenrequest" Role, but it is
+// scoped via resourceNames to the "cert-manager" ServiceAccount only — any other
+// ServiceAccount needs its own grant, which is easy to miss and fails at issuance
+// time rather than at apply time.
+resource "kubernetes_role_v1" "certmanager_tokenrequest" {
+  count = local.certmanager_vault_issuer_uses_k8s && var.certmanager_vault_issuer_create_tokenrequest_role ? 1 : 0
+
+  metadata {
+    name      = "${local.certmanager_vault_issuer_effective_sa}-tokenrequest"
+    namespace = var.certmanager_vault_issuer_namespace
+  }
+
+  rule {
+    api_groups     = [""]
+    resources      = ["serviceaccounts/token"]
+    resource_names = [local.certmanager_vault_issuer_effective_sa]
+    verbs          = ["create"]
+  }
+}
+
+resource "kubernetes_role_binding_v1" "certmanager_tokenrequest" {
+  count = local.certmanager_vault_issuer_uses_k8s && var.certmanager_vault_issuer_create_tokenrequest_role ? 1 : 0
+
+  metadata {
+    name      = "${local.certmanager_vault_issuer_effective_sa}-tokenrequest"
+    namespace = var.certmanager_vault_issuer_namespace
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role_v1.certmanager_tokenrequest[0].metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = var.certmanager_vault_issuer_controller_service_account
+    namespace = var.certmanager_namespace
+  }
 }
