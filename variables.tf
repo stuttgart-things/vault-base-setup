@@ -24,6 +24,14 @@ variable "k8s_auths" {
     namespace      = string
     token_policies = list(string)
     token_ttl      = number
+
+    # Which ServiceAccounts may log in through this mount. Defaults to the
+    # ServiceAccount this module creates ([name] / [namespace]). Override to
+    # admit an existing ServiceAccount instead — e.g. cert-manager's, which is
+    # Helm-managed and cannot be recreated here. The module's own SA stays the
+    # token reviewer either way.
+    bound_service_account_names      = optional(list(string))
+    bound_service_account_namespaces = optional(list(string))
   }))
   default     = []
   description = "A list of k8s_auth objects"
@@ -544,10 +552,85 @@ variable "certmanager_vault_issuer_pki_role" {
   default     = ""
 }
 
+variable "certmanager_vault_issuer_auth_method" {
+  description = <<-EOT
+    How the ClusterIssuer authenticates to Vault.
+
+    "token" (default) creates a static vault_token and stores it in a Secret.
+    Nothing renews that token — the Terraform provider only renews during an
+    apply — so Vault auth breaks roughly certmanager_vault_token_ttl after every
+    apply, while the ClusterIssuer keeps reporting Ready=True.
+
+    "kubernetes" uses Vault Kubernetes auth: cert-manager mints a short-lived
+    ServiceAccount token per request, so there is nothing to expire. Prefer it.
+    Requires certmanager_vault_issuer_k8s_auth_mount and _k8s_auth_role.
+  EOT
+  type        = string
+  default     = "token"
+
+  validation {
+    condition     = contains(["token", "kubernetes"], var.certmanager_vault_issuer_auth_method)
+    error_message = "certmanager_vault_issuer_auth_method must be either \"token\" or \"kubernetes\"."
+  }
+}
+
+variable "certmanager_vault_issuer_k8s_auth_mount" {
+  description = "Vault Kubernetes auth mount path (without the /v1/auth/ prefix), e.g. \"my-cluster-certmanager\". Required when auth method is \"kubernetes\"."
+  type        = string
+  default     = ""
+}
+
+variable "certmanager_vault_issuer_k8s_auth_role" {
+  description = "Vault Kubernetes auth role name. Required when auth method is \"kubernetes\"."
+  type        = string
+  default     = ""
+}
+
+variable "certmanager_vault_issuer_service_account" {
+  description = "ServiceAccount cert-manager presents when logging in to Vault. Defaults to certmanager_vault_issuer_k8s_auth_role. Must be listed in the Vault role's bound_service_account_names."
+  type        = string
+  default     = ""
+}
+
+variable "certmanager_vault_issuer_create_tokenrequest_role" {
+  description = <<-EOT
+    Create the Role/RoleBinding letting the cert-manager controller mint tokens
+    for the login ServiceAccount. cert-manager ships a tokenrequest Role scoped
+    via resourceNames to its own "cert-manager" ServiceAccount only, so any other
+    ServiceAccount needs this grant — without it issuance fails at runtime, not
+    at apply time. Only used when auth method is "kubernetes".
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "certmanager_vault_issuer_controller_service_account" {
+  description = "Name of the cert-manager controller ServiceAccount that is granted TokenRequest access to the login ServiceAccount."
+  type        = string
+  default     = "cert-manager"
+}
+
 variable "certmanager_vault_token_ttl" {
-  description = "TTL for the Vault token used by cert-manager"
+  description = <<-EOT
+    TTL for the Vault token used by cert-manager. Only used when
+    certmanager_vault_issuer_auth_method is "token".
+
+    Vault caps this at the token mount's max_lease_ttl, which defaults to 768h
+    (32 days) — larger values are silently truncated rather than rejected, so
+    raising this is not a way to avoid the expiry. Use auth_method "kubernetes"
+    instead.
+  EOT
   type        = string
   default     = "720h"
+
+  validation {
+    condition = (
+      can(regex("^[0-9]+h$", var.certmanager_vault_token_ttl))
+      ? tonumber(trimsuffix(var.certmanager_vault_token_ttl, "h")) <= 768
+      : true
+    )
+    error_message = "certmanager_vault_token_ttl exceeds Vault's default token mount max_lease_ttl of 768h; a larger value would be silently truncated. Raise sys/auth/token/tune first, or use certmanager_vault_issuer_auth_method = \"kubernetes\"."
+  }
 }
 
 variable "certmanager_vault_token_secret_name" {

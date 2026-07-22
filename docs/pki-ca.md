@@ -107,6 +107,21 @@ curl -sk \
 
 ## Step 3: Create a Vault Token for cert-manager
 
+> **This token expires and nothing renews it.** Terraform creates it once; the provider
+> only renews during an apply, and there is no in-cluster renewer. Roughly
+> `certmanager_vault_token_ttl` after each apply, every certificate issuance starts
+> failing with `permission denied / invalid token` — while the ClusterIssuer keeps
+> reporting `Ready=True`, because cert-manager only health-checks a Vault issuer at
+> setup. If the certificate lifetime exceeds the token TTL, the first renewal is
+> guaranteed to hit a dead token.
+>
+> Raising the TTL does not fix it: Vault caps token TTLs at the token mount's
+> `max_lease_ttl`, which defaults to `768h` (32 days), and silently truncates larger
+> values instead of rejecting them.
+>
+> Prefer `certmanager_vault_issuer_auth_method = "kubernetes"` — see
+> [Kubernetes auth](#kubernetes-auth-recommended) below. There is nothing to expire.
+
 Create a token scoped to the `pki-issue` policy:
 
 ```bash
@@ -337,3 +352,80 @@ Common causes:
 - The Vault token has expired - create a new one and update the secret
 - The PKI role does not allow the requested domain - check `allowed_domains` and `allow_subdomains`
 - The requested TTL exceeds the role's `max_ttl`
+
+## Kubernetes auth (recommended)
+
+Instead of a static token, let cert-manager authenticate to Vault with a short-lived
+ServiceAccount token minted per request via the TokenRequest API. Nothing expires, so the
+failure mode described in Step 3 cannot occur.
+
+```hcl
+module "vault-base-setup" {
+  source = "github.com/stuttgart-things/vault-base-setup?ref=<tag>"
+
+  # ... vault_addr, kubeconfig_path, cluster_name, pki settings ...
+
+  # CREATE THE AUTH MOUNT. Path becomes "<cluster_name>-<name>".
+  k8s_auths = [
+    {
+      name           = "certmanager-vault"
+      namespace      = "cert-manager"
+      token_policies = ["pki-issue"]
+      token_ttl      = 3600
+    }
+  ]
+
+  certmanager_vault_issuer_enabled        = true
+  certmanager_vault_issuer_pki_role       = "sthings-vsphere"
+  certmanager_vault_issuer_auth_method    = "kubernetes"
+  certmanager_vault_issuer_k8s_auth_mount = "<cluster_name>-certmanager-vault"
+  certmanager_vault_issuer_k8s_auth_role  = "certmanager-vault"
+}
+```
+
+Notes:
+
+- **Vault must reach the target cluster's API server.** The auth mount is configured with
+  the API server address from the kubeconfig. For a cross-cluster setup — Vault on one
+  cluster, cert-manager on another — verify this first, e.g. from the Vault pod:
+  `curl -sk https://<api-server>:6443/version` (an HTTP 401 means reachable, which is
+  what you want).
+- **The login ServiceAccount needs a TokenRequest grant.** cert-manager ships a
+  `cert-manager-tokenrequest` Role scoped via `resourceNames` to its own `cert-manager`
+  ServiceAccount, so any other ServiceAccount needs its own. The module creates it by
+  default (`certmanager_vault_issuer_create_tokenrequest_role`). Without it, issuance
+  fails at runtime rather than at apply time.
+- **To admit an existing ServiceAccount** instead of the one the module creates — for
+  example cert-manager's own, which is Helm-managed — set
+  `bound_service_account_names` / `bound_service_account_namespaces` on the `k8s_auths`
+  entry. The module's ServiceAccount remains the token reviewer either way.
+- **`caBundle` is still required** when the issuer reaches Vault over HTTPS with a
+  privately signed certificate; the auth method does not change that.
+
+### Migrating an existing token-based issuer
+
+Deploy the Kubernetes-auth issuer under a **different name** first, verify it with a test
+certificate, and only then repoint your `Certificate` resources. That keeps the working
+issuer as a fallback:
+
+```bash
+kubectl get certificate <name> -n <ns> \
+  -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+```
+
+If certificates had already been failing, cert-manager will be in exponential backoff and
+will not retry just because the issuer was fixed. Reset the counters to force an immediate
+attempt:
+
+```bash
+kubectl patch certificate <name> -n <ns> --subresource=status --type=merge \
+  -p '{"status":{"failedIssuanceAttempts":null,"lastFailureTime":null}}'
+```
+
+Confirm which issuer actually signed the result — a `Ready=True` alone can be a stale
+status from before the switch:
+
+```bash
+kubectl get secret <secret> -n <ns> \
+  -o jsonpath='{.metadata.annotations.cert-manager\.io/issuer-name}'
+```
