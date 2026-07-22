@@ -1,5 +1,10 @@
 # stuttgart-things/vault-base-setup
 
+> **Upgrading to v1.2.0?** KV secrets and the `k8s_auths` ServiceAccount moved to new state
+> addresses. `terraform state` surgery is required before the first apply — without it
+> Terraform deletes secret data and recreates the ServiceAccount. See
+> [docs/migration.md](docs/migration.md).
+
 terraform module for base-setup configuration of hashicorp vault.
 
 ## EXAMPLE USAGE
@@ -183,6 +188,18 @@ module "vault-secrets-setup" {
       description = "kubeconfig for kind-dev2 cluster"
       data_json   = jsonencode({
         kubeconfig = file("/home/sthings/.kube/kind-dev2")
+      })
+    },
+    # SEVERAL ENTRIES MAY SHARE A PATH — one mount, many secrets.
+    # (Before v1.2.0 this was a hard "Duplicate object key" error, which forced
+    # one mount per secret.) The mount description comes from the first entry
+    # listed for that path.
+    {
+      path        = "kubeconfigs"
+      name        = "kind-dev3"
+      description = "ignored — 'kind-dev2' above already defines this mount"
+      data_json   = jsonencode({
+        kubeconfig = file("/home/sthings/.kube/kind-dev3")
       })
     }
   ]

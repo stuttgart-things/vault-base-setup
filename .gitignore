@@ -39,3 +39,6 @@ terraform.rc
 # Dagger generated artifacts
 dagger/.dagger/
 dagger/go.sum
+
+# Provider lock file — a shared module must not pin provider versions for callers
+.terraform.lock.hcl

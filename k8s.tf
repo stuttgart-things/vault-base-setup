@@ -1,23 +1,22 @@
 // CREATE NAMESPACE!?
 
 // CREATE SERVICE-ACCOUNT
-resource "kubernetes_manifest" "service_account" {
+// Deliberately not kubernetes_manifest: that resource performs a server-side
+// lookup during *plan*, so any `terraform plan` without cluster access fails —
+// which rules out plan-only CI pipelines.
+resource "kubernetes_service_account_v1" "vault" {
 
   for_each = {
     for auth in var.k8s_auths :
     auth.name => auth
   }
 
-  manifest = {
-    "apiVersion" = "v1"
-    "kind"       = "ServiceAccount"
-    "metadata" = {
-      "name"      = each.value["name"]
-      "namespace" = each.value["namespace"]
-    }
-
-    "automountServiceAccountToken" = true
+  metadata {
+    name      = each.value["name"]
+    namespace = each.value["namespace"]
   }
+
+  automount_service_account_token = true
 
 }
 
@@ -41,7 +40,7 @@ resource "kubernetes_secret" "vault" {
   type = "kubernetes.io/service-account-token"
 
   depends_on = [
-    kubernetes_manifest.service_account
+    kubernetes_service_account_v1.vault
   ]
 
 }

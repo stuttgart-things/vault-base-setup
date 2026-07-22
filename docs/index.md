@@ -2,11 +2,18 @@
 
 Terraform module for base-setup configuration of HashiCorp Vault.
 
+!!! warning "Upgrading to v1.2.0"
+
+    KV secrets and the `k8s_auths` ServiceAccount moved to new state addresses.
+    `terraform state` surgery is required before the first apply — without it Terraform
+    deletes secret data and recreates the ServiceAccount. See
+    [Migration notes](migration.md).
+
 ## Features
 
 | Feature | Variable | Description |
 |---------|----------|-------------|
-| KV Secrets Engines | `secret_engines` | Mount KV v2 secrets engines and write initial secrets |
+| KV Secrets Engines | `secret_engines` | Mount KV v2 secrets engines and write initial secrets. Entries may share a `path` — one mount, many secrets |
 | KV Policies | `kv_policies` | Create ACL policies for KV access |
 | Kubernetes Auth | `k8s_auths` | Configure Kubernetes auth backends for service account authentication |
 | AppRole Auth | `enableApproleAuth`, `approle_roles` | Enable AppRole auth with configurable roles |
