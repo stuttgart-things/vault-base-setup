@@ -4,9 +4,9 @@ Terraform module for base-setup configuration of HashiCorp Vault.
 
 !!! warning "Upgrading to v1.2.0"
 
-    KV secrets and the `k8s_auths` ServiceAccount moved to new state addresses.
-    `terraform state` surgery is required before the first apply — without it Terraform
-    deletes secret data and recreates the ServiceAccount. See
+    KV secrets and the `k8s_auths` ServiceAccount moved to new state addresses. Run the
+    `terraform state` steps before the first apply — otherwise Terraform destroys and
+    recreates those resources instead of recognising them. See
     [Migration notes](migration.md).
 
 ## Features

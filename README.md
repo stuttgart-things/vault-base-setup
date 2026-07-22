@@ -1,9 +1,10 @@
 # stuttgart-things/vault-base-setup
 
 > **Upgrading to v1.2.0?** KV secrets and the `k8s_auths` ServiceAccount moved to new state
-> addresses. `terraform state` surgery is required before the first apply — without it
-> Terraform deletes secret data and recreates the ServiceAccount. See
-> [docs/migration.md](docs/migration.md).
+> addresses. Run the `terraform state` steps before the first apply — otherwise Terraform
+> destroys and recreates those resources instead of recognising them, which churns a new
+> version onto every secret and briefly invalidates the ServiceAccount token backing Vault
+> Kubernetes auth. See [docs/migration.md](docs/migration.md).
 
 terraform module for base-setup configuration of hashicorp vault.
 

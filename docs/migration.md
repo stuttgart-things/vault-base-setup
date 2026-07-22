@@ -2,9 +2,10 @@
 
 ## v1.2.0 — KV secret keys and the ServiceAccount resource
 
-Two changes move resources to different state addresses. **Both require `terraform state`
-surgery before the first apply.** Neither is optional: applying without it destroys live
-resources.
+Two changes move resources to different state addresses. **Both need `terraform state`
+surgery before the first apply.** Applying without it makes Terraform destroy and recreate
+live resources instead of recognising them — recoverable in both cases, but not something
+to walk into unprepared. The exact consequences are spelled out per change below.
 
 Run all commands with the same backend configuration you normally use, and take a state
 backup first:
@@ -27,10 +28,39 @@ now keyed on `<path>/<name>`.
 
 `vault_mount.kvv2` keys are **unchanged** (still the path). Only the secret addresses move.
 
-**Why you cannot skip this:** the old and new instances resolve to the *same Vault path*.
-Terraform sees one instance removed and another added, and there is no ordering guarantee
-between them. If the destroy runs after the create, **Terraform deletes the secret data it
-just wrote.**
+**Why you should not skip this.** Old and new instances resolve to the *same Vault path*, so
+without the move the plan reads:
+
+```
+module...vault_generic_secret.kvv2["ssh"] will be destroyed
+  (because key ["ssh"] is not in for_each map)
+module...vault_generic_secret.kvv2["ssh/sthings"] will be created
+
+Plan: 2 to add, 0 to change, 2 to destroy.
+```
+
+Terraform does not order a destroy of one instance against the create of another. Whether
+the secret survives depends on which finishes last.
+
+This was tested against a throwaway Vault. In that run the creates completed after the
+destroys and **the data survived** — the path ended at KV v2 version 2, with version 1
+soft-deleted:
+
+```
+v1: destroyed=False  deletion_time='2026-07-22T14:02:57Z'
+v2: destroyed=False  deletion_time=''
+```
+
+So this is a race, not a guaranteed wipe, and the losing outcome is recoverable: Vault KV v2
+performs a **soft** delete (`destroyed=false`), so a secret that ends up deleted can be
+brought back with
+
+```bash
+vault kv undelete -mount=<path> -versions=<n> <name>
+```
+
+None of that makes skipping the move a good idea — it churns a new version onto every
+secret and leaves the outcome to chance. Move them instead:
 
 For every entry in `secret_engines`:
 
@@ -121,3 +151,22 @@ ServiceAccount is not — that means the import did not land.
 gated behind `vso_enabled`, so with the default `vso_enabled = false` there are no
 instances and plan-time cluster access is not required. With `vso_enabled = true` the
 plan-time constraint still applies.
+
+---
+
+## Verified
+
+The KV part of this migration was rehearsed end to end against a throwaway Vault
+(`hashicorp/vault:1.20` dev server), using a fixture shaped like a real consumer — two
+mounts, one secret each, keyed the old way.
+
+- Applying v1.2.0 **without** the move plans `2 to add, 0 to change, 2 to destroy` on the
+  same Vault paths. Applied anyway, the data survived in that run (see the race note above).
+- Applying **with** the two `terraform state mv` commands yields exactly
+  `No changes. Your infrastructure matches the configuration.`
+- Adding further entries that share a path then works: two mounts carrying four secrets,
+  all readable, which the previous keying made impossible.
+
+The ServiceAccount part (`state rm` + `import`) has **not** been rehearsed — it needs a live
+cluster rather than a disposable Vault. Treat those commands as derived from the address
+change, not as tested, and check `terraform plan` for destroys before applying.
