@@ -59,6 +59,20 @@ variable "k8s_auth_reviewer_namespace" {
   default     = "kube-system"
 }
 
+# Set false on a cluster built by the VM pipeline: blueprints
+# CreateVaultKubernetesAuth already places the ServiceAccount, its SA-token
+# Secret and the ClusterRoleBinding under exactly these names, and two owners
+# for one identity is not a conflict Terraform can resolve -- it fails with
+# `serviceaccounts "vault-auth-reviewer" already exists`.
+#
+# The module then only READS the reviewer's Secret. The names line up because
+# the pipeline names that Secret after the ServiceAccount too.
+variable "k8s_auth_reviewer_create" {
+  description = "Create the token reviewer ServiceAccount, its SA-token Secret and its system:auth-delegator binding. Set false to use a reviewer that already exists — e.g. one the VM pipeline created."
+  type        = bool
+  default     = true
+}
+
 variable "kubeconfig_path" {
   type        = string
   default     = null

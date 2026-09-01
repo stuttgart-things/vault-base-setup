@@ -46,9 +46,16 @@ locals {
 // Deliberately not kubernetes_manifest: that resource performs a server-side
 // lookup during *plan*, so any `terraform plan` without cluster access fails —
 // which rules out plan-only CI pipelines.
+//
+// Skipped entirely with k8s_auth_reviewer_create = false, because on a
+// pipeline-built cluster this reviewer ALREADY EXISTS: blueprints
+// CreateVaultKubernetesAuth places ServiceAccount, SA-token Secret and
+// ClusterRoleBinding under the very same names. Two owners for one identity is
+// not a conflict Terraform can resolve — it fails with
+// `serviceaccounts "vault-auth-reviewer" already exists`.
 resource "kubernetes_service_account_v1" "reviewer" {
 
-  for_each = local.k8s_auth_reviewers
+  for_each = var.k8s_auth_reviewer_create ? local.k8s_auth_reviewers : {}
 
   metadata {
     name      = each.value["name"]
@@ -67,7 +74,7 @@ resource "kubernetes_service_account_v1" "reviewer" {
 // else: Vault stores it in the mount config, so it cannot be re-minted per use.
 resource "kubernetes_secret_v1" "reviewer" {
 
-  for_each = local.k8s_auth_reviewers
+  for_each = var.k8s_auth_reviewer_create ? local.k8s_auth_reviewers : {}
 
   metadata {
     name      = each.value["name"]
@@ -89,7 +96,7 @@ resource "kubernetes_secret_v1" "reviewer" {
 // GRANT system:auth-delegator TO THE REVIEWER — AND ONLY THE REVIEWER
 resource "kubernetes_cluster_role_binding" "reviewer" {
 
-  for_each = local.k8s_auth_reviewers
+  for_each = var.k8s_auth_reviewer_create ? local.k8s_auth_reviewers : {}
 
   metadata {
     // Namespace-qualified: two reviewers of the same name in different
@@ -257,6 +264,11 @@ locals {
 // A data source rather than the resource's own attributes: the controller
 // populates .data asynchronously after the Secret is created, so the resource
 // can be known while the token is still empty.
+//
+// Always a read, whether this module created the reviewer or the pipeline did.
+// With k8s_auth_reviewer_create = false this is the ONLY thing touching it, and
+// the names line up because blueprints CreateVaultKubernetesAuth names the
+// Secret after the ServiceAccount too.
 data "kubernetes_secret_v1" "reviewer" {
 
   for_each = local.k8s_auth_reviewers
