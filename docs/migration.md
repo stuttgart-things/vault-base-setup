@@ -1,5 +1,75 @@
 # Migration notes
 
+## Unreleased — the token reviewer moves off the login ServiceAccount
+
+A Kubernetes auth mount needs two identities, and this module used one for both:
+
+| | Needs | Previously | Now |
+|---|---|---|---|
+| **Reviewer** — whose JWT Vault presents to TokenReview | `system:auth-delegator` | the login SA | `vault-auth-reviewer` in `kube-system`, shared by every mount |
+| **Login SA** — the workload authenticating | nothing | held `system:auth-delegator` | holds nothing |
+
+`system:auth-delegator` is the right to review **any** token in the cluster. Handing
+that to cert-manager so it can authenticate itself is not a trade anybody would make
+deliberately; it was a side effect of one ServiceAccount doing two jobs. The VM
+pipeline's `CreateVaultKubernetesAuth` has always used a separate reviewer — this
+brings the module in line.
+
+Configurable via `k8s_auth_reviewer_name` / `k8s_auth_reviewer_namespace`, or per entry
+with `reviewer_name` / `reviewer_namespace` on `k8s_auths`.
+
+### What the first plan does
+
+**No `terraform state` surgery.** Nothing moves address; resources are added and
+removed. Expect, per `k8s_auths` entry:
+
+```
+# kubernetes_cluster_role_binding.vault["<name>"]           destroyed
+# kubernetes_secret.vault["<name>"]                         destroyed
+# kubernetes_service_account_v1.reviewer[...]               created
+# kubernetes_secret_v1.reviewer[...]                        created
+# kubernetes_cluster_role_binding.reviewer[...]             created
+# vault_kubernetes_auth_backend_config.kubernetes["<name>"] updated in-place
+```
+
+The reviewer resources are keyed `<namespace>/<name>` and created **once** per distinct
+reviewer, not once per mount — several mounts sharing one reviewer is the normal case.
+
+### The window that matters
+
+`vault_kubernetes_auth_backend_config` is updated **in place** with the new
+`token_reviewer_jwt`. Between destroying the old ClusterRoleBinding and that update
+landing, Vault holds a JWT whose ServiceAccount no longer has `system:auth-delegator`,
+and **logins fail with `permission denied`**. Terraform orders this correctly within one
+apply, so the window is seconds — but it is not zero, and an apply that fails part-way
+leaves it open.
+
+If that matters, verify a login before walking away:
+
+```bash
+kubectl -n <namespace> create token <login-sa> --duration=10m > /tmp/t
+vault write auth/<cluster>-<name>/login role=<name> jwt=@/tmp/t
+```
+
+A `ClusterIssuer` will **not** tell you: cert-manager reports `Ready` off a successful
+login at setup and never re-checks. Only an issued `Certificate` proves it.
+
+### The login SA's token Secret is gone
+
+`kubernetes_secret.vault` existed solely to feed `token_reviewer_jwt`. Nothing reads it
+now, and a long-lived ServiceAccount token sitting in a namespace is exactly the kind of
+standing credential this module should not leave behind. It is destroyed.
+
+If something outside this module reads that Secret, it breaks. Nothing in this repo does.
+
+### Not affected
+
+The login ServiceAccount itself is still created for every entry, including when
+`bound_service_account_names` admits somebody else's. Making that conditional is a
+separate behaviour change and is not part of this one.
+
+---
+
 ## v1.2.0 — KV secret keys and the ServiceAccount resource
 
 Two changes move resources to different state addresses. **Both need `terraform state`

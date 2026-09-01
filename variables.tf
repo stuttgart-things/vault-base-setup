@@ -28,13 +28,49 @@ variable "k8s_auths" {
     # Which ServiceAccounts may log in through this mount. Defaults to the
     # ServiceAccount this module creates ([name] / [namespace]). Override to
     # admit an existing ServiceAccount instead — e.g. cert-manager's, which is
-    # Helm-managed and cannot be recreated here. The module's own SA stays the
-    # token reviewer either way.
+    # Helm-managed and cannot be recreated here.
     bound_service_account_names      = optional(list(string))
     bound_service_account_namespaces = optional(list(string))
+
+    # The ServiceAccount whose JWT Vault presents to TokenReview. Falls back to
+    # k8s_auth_reviewer_name / _namespace, and normally should — one reviewer
+    # per cluster is the point. Override only where a mount has to be reviewed
+    # by a different identity.
+    #
+    # NOT the ServiceAccount that logs in. This one holds system:auth-delegator,
+    # the right to review ANY token in the cluster, which is not a right a
+    # workload should hold in order to authenticate itself.
+    reviewer_name      = optional(string)
+    reviewer_namespace = optional(string)
   }))
   default     = []
   description = "A list of k8s_auth objects"
+}
+
+variable "k8s_auth_reviewer_name" {
+  description = "ServiceAccount whose JWT Vault presents to TokenReview. Holds system:auth-delegator and is shared by every Kubernetes auth mount unless an entry overrides it."
+  type        = string
+  default     = "vault-auth-reviewer"
+}
+
+variable "k8s_auth_reviewer_namespace" {
+  description = "Namespace of the token reviewer ServiceAccount. kube-system by default: it is a cluster-wide identity, not a tenant's."
+  type        = string
+  default     = "kube-system"
+}
+
+# Set false on a cluster built by the VM pipeline: blueprints
+# CreateVaultKubernetesAuth already places the ServiceAccount, its SA-token
+# Secret and the ClusterRoleBinding under exactly these names, and two owners
+# for one identity is not a conflict Terraform can resolve -- it fails with
+# `serviceaccounts "vault-auth-reviewer" already exists`.
+#
+# The module then only READS the reviewer's Secret. The names line up because
+# the pipeline names that Secret after the ServiceAccount too.
+variable "k8s_auth_reviewer_create" {
+  description = "Create the token reviewer ServiceAccount, its SA-token Secret and its system:auth-delegator binding. Set false to use a reviewer that already exists — e.g. one the VM pipeline created."
+  type        = bool
+  default     = true
 }
 
 variable "kubeconfig_path" {
