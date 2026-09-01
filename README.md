@@ -1,5 +1,12 @@
 # stuttgart-things/vault-base-setup
 
+> **Kubernetes auth now uses a separate token reviewer.** `system:auth-delegator` moves off
+> the ServiceAccount that logs in and onto `vault-auth-reviewer` in `kube-system`, so a
+> workload no longer has to hold the right to review every token in the cluster in order to
+> authenticate itself. No state surgery — but the first apply destroys the login SA's token
+> Secret and updates the mount config in place, logins fail for the seconds in between, and
+> a `ClusterIssuer` will not tell you. See [docs/migration.md](docs/migration.md).
+
 > **Upgrading to v1.2.0?** KV secrets and the `k8s_auths` ServiceAccount moved to new state
 > addresses. Run the `terraform state` steps before the first apply — otherwise Terraform
 > destroys and recreates those resources instead of recognising them, which churns a new

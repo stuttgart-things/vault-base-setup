@@ -28,13 +28,35 @@ variable "k8s_auths" {
     # Which ServiceAccounts may log in through this mount. Defaults to the
     # ServiceAccount this module creates ([name] / [namespace]). Override to
     # admit an existing ServiceAccount instead — e.g. cert-manager's, which is
-    # Helm-managed and cannot be recreated here. The module's own SA stays the
-    # token reviewer either way.
+    # Helm-managed and cannot be recreated here.
     bound_service_account_names      = optional(list(string))
     bound_service_account_namespaces = optional(list(string))
+
+    # The ServiceAccount whose JWT Vault presents to TokenReview. Falls back to
+    # k8s_auth_reviewer_name / _namespace, and normally should — one reviewer
+    # per cluster is the point. Override only where a mount has to be reviewed
+    # by a different identity.
+    #
+    # NOT the ServiceAccount that logs in. This one holds system:auth-delegator,
+    # the right to review ANY token in the cluster, which is not a right a
+    # workload should hold in order to authenticate itself.
+    reviewer_name      = optional(string)
+    reviewer_namespace = optional(string)
   }))
   default     = []
   description = "A list of k8s_auth objects"
+}
+
+variable "k8s_auth_reviewer_name" {
+  description = "ServiceAccount whose JWT Vault presents to TokenReview. Holds system:auth-delegator and is shared by every Kubernetes auth mount unless an entry overrides it."
+  type        = string
+  default     = "vault-auth-reviewer"
+}
+
+variable "k8s_auth_reviewer_namespace" {
+  description = "Namespace of the token reviewer ServiceAccount. kube-system by default: it is a cluster-wide identity, not a tenant's."
+  type        = string
+  default     = "kube-system"
 }
 
 variable "kubeconfig_path" {
