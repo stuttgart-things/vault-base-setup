@@ -19,6 +19,15 @@ module "vault-secrets-setup" {
       name           = "s3"
       token_policies = ["read-write-all-s3-kvv2"]
     },
+    {
+      # PER-ROLE SETTINGS: short-lived tokens, and no secret_id minted by this
+      # module — the shape of a role whose credentials are handed out elsewhere.
+      name             = "s3-short-lived"
+      token_policies   = ["read-write-all-s3-kvv2"]
+      token_ttl        = 1200
+      token_max_ttl    = 1800
+      create_secret_id = false
+    },
   ]
 
   secret_engines = [

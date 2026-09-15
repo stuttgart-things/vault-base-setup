@@ -89,9 +89,51 @@ variable "approle_roles" {
   type = list(object({
     name           = string
     token_policies = list(string)
+
+    # PER-ROLE SETTINGS, all optional and in seconds (use counts: a count).
+    # Unset, a role takes the module-wide variable of the same name below
+    # (secret_id_ttl, token_max_ttl, ...), so callers that set none of them are
+    # unchanged. token_ttl has no module-wide variable: unset means the provider
+    # default (0, the auth mount's default lease).
+    #
+    # Needed wherever roles on the one approle/ mount want different lifetimes —
+    # a short-lived bootstrap credential next to long-lived consumer roles. With
+    # module-wide values only, declaring such a role reset its TTLs to 0.
+    token_ttl              = optional(number)
+    token_max_ttl          = optional(number)
+    token_period           = optional(number)
+    token_num_uses         = optional(number)
+    token_explicit_max_ttl = optional(number)
+    secret_id_ttl          = optional(number)
+    secret_id_num_uses     = optional(number)
+
+    # Mint a secret_id for this role and publish it in the secret_id output.
+    # false declares the role only — for adopting an existing role whose
+    # credentials are handed out elsewhere, without adding a never-expiring one.
+    # Flipping an existing role from true to false DESTROYS the secret_id this
+    # module minted for it, which revokes it.
+    create_secret_id = optional(bool, true)
   }))
   default     = []
-  description = "A list of approle definitions"
+  description = "A list of approle definitions. Optional per role: token_ttl, token_max_ttl, token_period, token_num_uses, token_explicit_max_ttl, secret_id_ttl and secret_id_num_uses (override the module-wide variables), and create_secret_id (default true)."
+
+  validation {
+    condition = alltrue(flatten([
+      for role in var.approle_roles : [
+        for v in [role.token_ttl, role.token_max_ttl, role.token_period, role.token_num_uses, role.token_explicit_max_ttl, role.secret_id_ttl, role.secret_id_num_uses] :
+        v == null ? true : v >= 0
+      ]
+    ]))
+    error_message = "approle_roles: TTLs and use counts must be >= 0 (0 means unlimited, or the mount default)."
+  }
+
+  validation {
+    condition = alltrue([
+      for role in var.approle_roles :
+      (role.token_ttl == null || role.token_max_ttl == null) ? true : (role.token_max_ttl == 0 || role.token_max_ttl >= role.token_ttl)
+    ])
+    error_message = "approle_roles: token_max_ttl must be 0 or >= token_ttl. Vault rejects a role whose token_ttl exceeds its token_max_ttl, and only at apply time."
+  }
 }
 
 variable "userPassPath" {

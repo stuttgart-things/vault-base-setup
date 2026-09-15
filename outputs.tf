@@ -1,12 +1,20 @@
 output "role_id" {
-  description = "Output of role id"
+  description = "Role IDs as a list, ordered by role name. Prefer role_ids, which is keyed by name."
   value = [
     for role in vault_approle_auth_backend_role.approle : role.role_id
   ]
 }
 
+output "role_ids" {
+  description = "Role IDs keyed by role name"
+  value = {
+    for role_name, role in vault_approle_auth_backend_role.approle :
+    role_name => role.role_id
+  }
+}
+
 output "secret_id" {
-  description = "Output of secret id"
+  description = "Secret IDs keyed by role name. Only roles with create_secret_id = true (the default) appear here."
   value = {
     for role_name, secret in vault_approle_auth_backend_role_secret_id.approle_secret :
     role_name => secret.secret_id

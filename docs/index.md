@@ -16,7 +16,7 @@ Terraform module for base-setup configuration of HashiCorp Vault.
 | KV Secrets Engines | `secret_engines` | Mount KV v2 secrets engines and write initial secrets. Entries may share a `path` — one mount, many secrets |
 | KV Policies | `kv_policies` | Create ACL policies for KV access |
 | Kubernetes Auth | `k8s_auths` | Configure Kubernetes auth backends for service account authentication |
-| AppRole Auth | `enableApproleAuth`, `approle_roles` | Enable AppRole auth with configurable roles |
+| AppRole Auth | `enableApproleAuth`, `approle_roles` | Enable AppRole auth with configurable roles. TTLs and use counts can be set per role, and `create_secret_id = false` declares a role without minting a secret_id |
 | UserPass Auth | `enableUserPass`, `user_list` | Enable username/password authentication |
 | CSI Provider | `csi_enabled` | Deploy Secrets Store CSI Driver integration |
 | VSO | `vso_enabled` | Deploy Vault Secrets Operator |

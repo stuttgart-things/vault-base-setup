@@ -199,6 +199,9 @@ subsequent apply repairs it.
 > be determined until apply"* — even when `approle_roles` is empty and the map is provably
 > empty. `terraform plan` handles it fine, so use a config `import` block instead, which
 > goes through a normal plan.
+>
+> **Fixed after v1.2.0** (#42): the resource now takes its keys from `var.approle_roles`,
+> so the CLI works again from the next release on. On v1.2.0 itself, use the import block.
 
 For every entry in `k8s_auths`, first drop the old address:
 
