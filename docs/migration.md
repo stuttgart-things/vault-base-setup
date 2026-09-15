@@ -1,6 +1,32 @@
 # Migration notes
 
-## Unreleased — the token reviewer moves off the login ServiceAccount
+## v1.3.0 — per-role AppRole settings (no migration)
+
+`approle_roles` entries take optional `token_ttl`, `token_max_ttl`, `token_period`,
+`token_num_uses`, `token_explicit_max_ttl`, `secret_id_ttl` and `secret_id_num_uses`,
+and `create_secret_id` (default `true`). Unset values fall back to the module-wide
+variables, so a caller that sets none of them sees **no plan change**.
+
+`vault_approle_auth_backend_role_secret_id` now takes its keys from
+`var.approle_roles` instead of from the role resource (#42). The keys are still the
+role names, so nothing moves address — and the `terraform import` CLI works again.
+
+Two things to know before using the new fields:
+
+- **Adopting an existing role:** declare it with its live TTLs and
+  `create_secret_id = false`, and adopt it with an `import` block
+  (`id = "auth/approle/role/<name>"`). Expect `1 to import` and no in-place update;
+  an update means the declared values differ from the live role.
+- **Do not flip `create_secret_id` from `true` to `false` on a role that has a
+  module-minted secret_id.** Terraform destroys that secret_id, which revokes it —
+  whoever logs in with it is locked out.
+
+---
+
+## v1.3.0 — the token reviewer moves off the login ServiceAccount
+
+Only callers with `k8s_auths` entries are affected. The reviewer resources are derived
+from `k8s_auths`, so a caller without any sees no plan change from this section.
 
 A Kubernetes auth mount needs two identities, and this module used one for both:
 
@@ -199,6 +225,9 @@ subsequent apply repairs it.
 > be determined until apply"* — even when `approle_roles` is empty and the map is provably
 > empty. `terraform plan` handles it fine, so use a config `import` block instead, which
 > goes through a normal plan.
+>
+> **Fixed after v1.2.0** (#42): the resource now takes its keys from `var.approle_roles`,
+> so the CLI works again from the next release on. On v1.2.0 itself, use the import block.
 
 For every entry in `k8s_auths`, first drop the old address:
 

@@ -175,6 +175,20 @@ module "vault-secrets-setup" {
     {
       name           = "read-k8s"
       token_policies = ["read-k8s"]
+    },
+    # PER-ROLE SETTINGS. token_ttl, token_max_ttl, token_period, token_num_uses,
+    # token_explicit_max_ttl, secret_id_ttl and secret_id_num_uses are all
+    # optional on a role; unset, a role takes the module-wide variable of the same
+    # name (token_ttl: the provider default). create_secret_id = false declares
+    # the role without minting a secret_id — for a role whose credentials are
+    # handed out elsewhere. Do not flip it to false on a role that already has a
+    # module-minted secret_id: that destroys, and so revokes, it.
+    {
+      name             = "bootstrap"
+      token_policies   = ["read-k8s"]
+      token_ttl        = 1200
+      token_max_ttl    = 1800
+      create_secret_id = false
     }
   ]
 
