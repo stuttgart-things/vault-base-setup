@@ -15,7 +15,7 @@ jobs:
   validate-terraform:
     # if: github.event.ref == 'refs/heads/main'
     name: Valdiate
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-validate-terraform.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-validate-terraform.yaml@01c34611db706595196ee0ab5e851f8f29f55390 # v1.0.0
     with:
       environment-name: k8s
       runs-on: ghr-vault-base-setup-in-cluster
@@ -25,7 +25,7 @@ jobs:
 
   terraform-docs:
     name: Docs
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-docs.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-docs.yaml@01c34611db706595196ee0ab5e851f8f29f55390 # v1.0.0
     with:
       environment-name: k8s
       runs-on: ghr-vault-base-setup-in-cluster
@@ -33,7 +33,7 @@ jobs:
 
   terraform-security:
     name: Security
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-security.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-security.yaml@01c34611db706595196ee0ab5e851f8f29f55390 # v1.0.0
     with:
       environment-name: k8s
       runs-on: ghr-vault-base-setup-in-cluster
@@ -43,7 +43,7 @@ jobs:
   terraform-test:
     name: Test
     needs: validate-terraform
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-test.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-terraform-test.yaml@01c34611db706595196ee0ab5e851f8f29f55390 # v1.0.0
     with:
       environment-name: k8s
       runs-on: ghr-vault-base-setup-in-cluster
